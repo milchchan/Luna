@@ -1,5 +1,7 @@
 # Luna
 
+Dynamic Wallpaper for Windows
+
 ![](https://github.com/milchchan/Luna/workflows/.NET/badge.svg)
 
 ## Build
