@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.31410.357
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Luna", "Luna\Luna.csproj", "{A1CED437-3813-4039-B78F-6F76DA1FDCE3}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Debug|x64 = Debug|x64
+		Release|Any CPU = Release|Any CPU
+		Release|x64 = Release|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{A1CED437-3813-4039-B78F-6F76DA1FDCE3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A1CED437-3813-4039-B78F-6F76DA1FDCE3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A1CED437-3813-4039-B78F-6F76DA1FDCE3}.Debug|x64.ActiveCfg = Debug|x64
+		{A1CED437-3813-4039-B78F-6F76DA1FDCE3}.Debug|x64.Build.0 = Debug|x64
+		{A1CED437-3813-4039-B78F-6F76DA1FDCE3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A1CED437-3813-4039-B78F-6F76DA1FDCE3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A1CED437-3813-4039-B78F-6F76DA1FDCE3}.Release|x64.ActiveCfg = Release|x64
+		{A1CED437-3813-4039-B78F-6F76DA1FDCE3}.Release|x64.Build.0 = Release|x64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {7F0B728A-7ACF-437F-9C14-CBBB9B22B55A}
+	EndGlobalSection
+EndGlobal
