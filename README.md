@@ -1,6 +1,6 @@
 # Luna
 
-Dynamic Wallpaper for Windows
+This repository contains Luna implementation for Windows. Luna is a platform for dynamic wallpapers.
 
 ![](https://github.com/milchchan/Luna/workflows/.NET/badge.svg)
 
