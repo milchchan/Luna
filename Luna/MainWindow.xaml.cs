@@ -36,17 +36,17 @@ namespace Luna
             {
                 string url;
 
-                if (Regex.IsMatch(this.source, @"^\w+://", RegexOptions.CultureInvariant))
+                if (Regex.IsMatch(value, @"^\w+://", RegexOptions.CultureInvariant))
                 {
-                    url = this.source;
+                    url = value;
                 }
-                else if (System.IO.Path.IsPathRooted(this.source))
+                else if (System.IO.Path.IsPathRooted(value))
                 {
-                    url = String.Join("file:///", this.source);
+                    url = String.Join("file:///", value);
                 }
                 else
                 {
-                    url = String.Join("file:///", System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), this.source));
+                    url = String.Join("file:///", System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), value));
                 }
 
                 this.source = value;
