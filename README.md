@@ -1,4 +1,5 @@
-![Screenshot](https://user-images.githubusercontent.com/246691/123901423-dfa69680-d9a5-11eb-897e-0498305a9dec.png "Screenshot")
+![GIF](https://user-images.githubusercontent.com/246691/124377872-4fd85380-dce9-11eb-97c0-2258d9bc86af.gif "GIF")
+<!--![Screenshot](https://user-images.githubusercontent.com/246691/123901423-dfa69680-d9a5-11eb-897e-0498305a9dec.png "Screenshot")-->
 
 # Luna
 
