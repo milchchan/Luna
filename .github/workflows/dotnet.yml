@@ -27,7 +27,6 @@ jobs:
       run: dotnet publish Luna/Luna.csproj --configuration Release --framework net6.0-windows --output Luna/bin/Release/net6.0-windows/win10-x64/publish/ --runtime win10-x64 --self-contained true
     - name: Upload a Build Artifact
       uses: actions/upload-artifact@v2.3.0
-      if: !failure()
       with:
         name: Luna-net6.0-windows-win10-x64
         path: Luna/bin/Release/net6.0-windows/win10-x64/publish/
