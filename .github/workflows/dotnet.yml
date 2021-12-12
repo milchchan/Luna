@@ -30,4 +30,4 @@ jobs:
       with:
         name: Luna-net6.0-windows-win10-x64
         path: Luna/bin/Release/net6.0-windows/win10-x64/publish/
-        retention-days: 30
+        retention-days: 1
