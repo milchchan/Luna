@@ -18,15 +18,15 @@ namespace Luna
     {
         private static IntPtr s_hHook = IntPtr.Zero;
         private readonly object syncObj = new object();
-        private CefSharp.OffScreen.ChromiumWebBrowser browser = null;
-        private System.Drawing.Bitmap desktopBitmap = null;
+        private CefSharp.OffScreen.ChromiumWebBrowser? browser = null;
+        private System.Drawing.Bitmap? desktopBitmap = null;
         private IntPtr hWnd = IntPtr.Zero;
         private bool isDrawing = false;
         private int forceRedraws = 0;
         private int frameRate = 15;
-        private string source = null;
+        private string? source = null;
 
-        public string Source
+        public string? Source
         {
             get
             {
@@ -36,9 +36,9 @@ namespace Luna
             {
                 string url;
 
-                if (Regex.IsMatch(value, @"^\w+://", RegexOptions.CultureInvariant))
+                if (Regex.IsMatch(value!, @"^\w+://", RegexOptions.CultureInvariant))
                 {
-                    url = value;
+                    url = value!;
                 }
                 else if (System.IO.Path.IsPathRooted(value))
                 {
@@ -46,11 +46,11 @@ namespace Luna
                 }
                 else
                 {
-                    url = String.Join("file:///", System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), value));
+                    url = String.Join("file:///", System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)!, value!));
                 }
 
                 this.source = value;
-                this.browser.Load(url);
+                this.browser!.Load(url);
             }
         }
 
@@ -58,8 +58,8 @@ namespace Luna
         {
             InitializeComponent();
 
-            System.Configuration.Configuration config1 = null;
-            string directory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), System.Reflection.Assembly.GetExecutingAssembly().GetName().Name);
+            System.Configuration.Configuration? config1 = null;
+            string directory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), System.Reflection.Assembly.GetExecutingAssembly().GetName().Name!);
             string url;
 
             if (Directory.Exists(directory))
@@ -86,7 +86,7 @@ namespace Luna
 
                 if (config1.AppSettings.Settings["Source"] != null && config1.AppSettings.Settings["Source"].Value.Length > 0)
                 {
-                    this.source = config1.AppSettings.Settings["Source"].Value;                    
+                    this.source = config1.AppSettings.Settings["Source"].Value;
                 }
             }
             else
@@ -127,9 +127,9 @@ namespace Luna
                 AcceptLanguageList = System.Globalization.CultureInfo.CurrentCulture.Name
             });
 
-            if (Regex.IsMatch(this.source, @"^\w+://", RegexOptions.CultureInvariant))
+            if (Regex.IsMatch(this.source!, @"^\w+://", RegexOptions.CultureInvariant))
             {
-                url = this.source;
+                url = this.source!;
             }
             else if (System.IO.Path.IsPathRooted(this.source))
             {
@@ -137,7 +137,7 @@ namespace Luna
             }
             else
             {
-                url = String.Join("file:///", System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), this.source));
+                url = String.Join("file:///", System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)!, this.source!));
             }
 
             this.browser = new CefSharp.OffScreen.ChromiumWebBrowser(url, new CefSharp.BrowserSettings() { WindowlessFrameRate = this.frameRate }, new CefSharp.RequestContext(new CefSharp.RequestContextSettings()));
@@ -169,21 +169,22 @@ namespace Luna
                         }
                     }
                 }
-            };
+            }
+            !;
 
-            Microsoft.Win32.SystemEvents.DisplaySettingsChanged += OnDisplaySettingsChanged;
+            Microsoft.Win32.SystemEvents.DisplaySettingsChanged += OnDisplaySettingsChanged!;
         }
 
         protected override void OnSourceInitialized(EventArgs e)
         {
             base.OnSourceInitialized(e);
 
-            System.Windows.Interop.HwndSource hwndSource = PresentationSource.FromVisual(this) as System.Windows.Interop.HwndSource;
+            System.Windows.Interop.HwndSource? hwndSource = PresentationSource.FromVisual(this) as System.Windows.Interop.HwndSource;
 
             if (hwndSource != null)
             {
                 const int WH_MOUSE_LL = 14;
-                
+
                 this.hWnd = hwndSource.Handle;
 
                 if (this == Application.Current.MainWindow)
@@ -197,18 +198,18 @@ namespace Luna
 
                             if (nCode >= 0 && WM_MOUSEMOVE == wParam.ToInt32())
                             {
-                                MainWindow window = Application.Current.MainWindow as MainWindow;
+                                MainWindow? window = Application.Current.MainWindow as MainWindow;
 
                                 if (window != null)
                                 {
-                                    NativeMethods.MSLLHOOKSTRUCT hookStruct = (NativeMethods.MSLLHOOKSTRUCT)System.Runtime.InteropServices.Marshal.PtrToStructure(lParam, typeof(NativeMethods.MSLLHOOKSTRUCT));
+                                    NativeMethods.MSLLHOOKSTRUCT hookStruct = (NativeMethods.MSLLHOOKSTRUCT)System.Runtime.InteropServices.Marshal.PtrToStructure(lParam, typeof(NativeMethods.MSLLHOOKSTRUCT))!;
 
-                                    window.browser.GetBrowser().GetHost().SendMouseMoveEvent(new CefSharp.MouseEvent(hookStruct.pt.x, hookStruct.pt.y, CefSharp.CefEventFlags.None), false);
+                                    window.browser!.GetBrowser().GetHost().SendMouseMoveEvent(new CefSharp.MouseEvent(hookStruct.pt.x, hookStruct.pt.y, CefSharp.CefEventFlags.None), false);
                                 }
                             }
 
                             return NativeMethods.CallNextHookEx(MainWindow.s_hHook, nCode, wParam, lParam);
-                        }, NativeMethods.GetModuleHandle(mainModule.ModuleName), 0);
+                        }, NativeMethods.GetModuleHandle(mainModule!.ModuleName!), 0);
                     }
                 }
 
@@ -248,7 +249,7 @@ namespace Luna
 
                         NativeMethods.SystemParametersInfo(SPI_GETDESKWALLPAPER, (UInt32)path.Length, path, 0);
                         NativeMethods.SystemParametersInfo(SPI_SETDESKWALLPAPER, 0, path.Substring(0, path.IndexOf('\0')), SPIF_UPDATEINIFILE | SPIF_SENDWININICHANGE);
-                        
+
                         //RestoreDesktop();
                         //this.desktopBitmap.Dispose();
                     }
@@ -258,7 +259,7 @@ namespace Luna
                         NativeMethods.UnhookWindowsHookEx(MainWindow.s_hHook);
                     }
 
-                    Microsoft.Win32.SystemEvents.DisplaySettingsChanged -= OnDisplaySettingsChanged;
+                    Microsoft.Win32.SystemEvents.DisplaySettingsChanged -= OnDisplaySettingsChanged!;
 
                     break;
             }
@@ -273,7 +274,7 @@ namespace Luna
                 int versionMajor = Environment.OSVersion.Version.Major;
                 int versionMinor = Environment.OSVersion.Version.Minor;
                 double version = versionMajor + (double)versionMinor / 10;
-                string directory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), System.Reflection.Assembly.GetExecutingAssembly().GetName().Name);
+                string directory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), System.Reflection.Assembly.GetExecutingAssembly().GetName().Name!);
 
                 if (version > 6.1)
                 {
@@ -287,7 +288,7 @@ namespace Luna
 
                     if (result == APPMODEL_ERROR_NO_PACKAGE)
                     {
-                        System.Configuration.Configuration config = null;
+                        System.Configuration.Configuration? config = null;
 
                         if (Directory.Exists(directory))
                         {
@@ -394,7 +395,7 @@ namespace Luna
                 }
                 else
                 {
-                    System.Configuration.Configuration config = null;
+                    System.Configuration.Configuration? config = null;
 
                     if (Directory.Exists(directory))
                     {
@@ -432,13 +433,13 @@ namespace Luna
 
         private void OnDisplaySettingsChanged(object sender, EventArgs e)
         {
-            this.browser.Size = new System.Drawing.Size((int)SystemParameters.VirtualScreenWidth, (int)SystemParameters.VirtualScreenHeight);
+            this.browser!.Size = new System.Drawing.Size((int)SystemParameters.VirtualScreenWidth, (int)SystemParameters.VirtualScreenHeight);
             this.forceRedraws = this.frameRate;
         }
 
         public void Refresh()
         {
-            this.browser.GetBrowser().Reload();
+            this.browser!.GetBrowser().Reload();
         }
 
         private void SaveDesktop()
@@ -449,7 +450,7 @@ namespace Luna
             NativeMethods.EnumWindows((hwnd, lParam) =>
             {
                 var shell = NativeMethods.FindWindowEx(hwnd, IntPtr.Zero, "SHELLDLL_DefView", null);
-                
+
                 if (shell != IntPtr.Zero)
                 {
                     workerw = NativeMethods.FindWindowEx(IntPtr.Zero, hwnd, "WorkerW", null);
@@ -473,9 +474,9 @@ namespace Luna
             NativeMethods.SelectObject(hCompatibleDc, hGdiObj);
             NativeMethods.DeleteDC(hCompatibleDc);
             NativeMethods.ReleaseDC(workerw, hWorkerwDc);
-            
+
             this.desktopBitmap = System.Drawing.Image.FromHbitmap(hBitmap);
-            
+
             NativeMethods.DeleteObject(hBitmap);
         }
 
@@ -486,7 +487,7 @@ namespace Luna
             NativeMethods.EnumWindows((hwnd, lParam) =>
             {
                 var shell = NativeMethods.FindWindowEx(hwnd, IntPtr.Zero, "SHELLDLL_DefView", null);
-                
+
                 if (shell != IntPtr.Zero)
                 {
                     workerw = NativeMethods.FindWindowEx(IntPtr.Zero, hwnd, "WorkerW", null);
@@ -496,10 +497,10 @@ namespace Luna
             }, IntPtr.Zero);
 
             var hDc = NativeMethods.GetDCEx(workerw, IntPtr.Zero, 0x403);
-            
+
             using (var g = System.Drawing.Graphics.FromHdc(hDc))
             {
-                g.DrawImage(this.desktopBitmap, new System.Drawing.PointF(0, 0));
+                g.DrawImage(this.desktopBitmap!, new System.Drawing.PointF(0, 0));
             }
 
             NativeMethods.ReleaseDC(workerw, hDc);
@@ -511,11 +512,11 @@ namespace Luna
             {
                 var hDc = g.GetHdc();
                 var workerw = IntPtr.Zero;
-                
+
                 NativeMethods.EnumWindows((hwnd, lParam) =>
                 {
                     var shell = NativeMethods.FindWindowEx(hwnd, IntPtr.Zero, "SHELLDLL_DefView", null);
-                    
+
                     if (shell != IntPtr.Zero)
                     {
                         workerw = NativeMethods.FindWindowEx(IntPtr.Zero, hwnd, "WorkerW", null);
@@ -528,7 +529,7 @@ namespace Luna
                 var hWorkerwDc = NativeMethods.GetDCEx(workerw, IntPtr.Zero, 0x403);
                 var hBitmap = bitmap.GetHbitmap();
                 var hGdiObj = NativeMethods.SelectObject(hCompatibleDc, hBitmap);
-                
+
                 if (force)
                 {
                     NativeMethods.BitBlt(hWorkerwDc, 0, 0, bitmap.Width, bitmap.Height, hCompatibleDc, 0, 0, NativeMethods.SRCCOPY);
@@ -546,5 +547,5 @@ namespace Luna
                 NativeMethods.ReleaseDC(workerw, hWorkerwDc);
             }
         }
-    }    
+    }
 }

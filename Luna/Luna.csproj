@@ -2,23 +2,19 @@
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net5.0-windows</TargetFramework>
-    <UseWindowsForms>true</UseWindowsForms>
+    <TargetFramework>net6.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
     <UseWPF>true</UseWPF>
-    <Platforms>AnyCPU;x64</Platforms>
+    <UseWindowsForms>True</UseWindowsForms>
     <ApplicationIcon>Luna.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="Luna.ico" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Include="CefSharp.OffScreen.NETCore" Version="91.1.211" />
-  </ItemGroup>
-
-  <ItemGroup>
     <Resource Include="Luna.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CefSharp.OffScreen.NETCore" Version="96.0.170" />
   </ItemGroup>
 
   <ItemGroup>

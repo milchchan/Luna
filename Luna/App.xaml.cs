@@ -15,7 +15,7 @@ namespace Luna
     public partial class App : Application
     {
         private bool sessionEnding = false;
-        private System.Windows.Forms.NotifyIcon notifyIcon = null;
+        private System.Windows.Forms.NotifyIcon? notifyIcon = null;
 
         protected override void OnStartup(StartupEventArgs e)
         {
@@ -28,12 +28,12 @@ namespace Luna
             {
                 var dialog = new Microsoft.Win32.OpenFileDialog();
 
-                dialog.Multiselect = false;                
+                dialog.Multiselect = false;
                 dialog.Filter = Luna.Resources.Filter;
 
                 if (dialog.ShowDialog() == true)
                 {
-                    MainWindow window = this.MainWindow as MainWindow;
+                    MainWindow? window = this.MainWindow as MainWindow;
 
                     if (window != null)
                     {
@@ -43,7 +43,7 @@ namespace Luna
             });
             contextMenuStrip.Items.Add(Luna.Resources.Refresh, null, (sender, args) =>
             {
-                MainWindow window = this.MainWindow as MainWindow;
+                MainWindow? window = this.MainWindow as MainWindow;
 
                 if (window != null)
                 {
@@ -68,7 +68,7 @@ namespace Luna
 
             if (!this.sessionEnding)
             {
-                this.notifyIcon.Dispose();
+                this.notifyIcon!.Dispose();
             }
         }
 
@@ -77,7 +77,7 @@ namespace Luna
             base.OnSessionEnding(e);
 
             this.MainWindow.Close();
-            this.notifyIcon.Dispose();
+            this.notifyIcon!.Dispose();
             this.sessionEnding = true;
         }
 
@@ -128,10 +128,10 @@ namespace Luna
         public static extern bool EnumWindows(EnumWindowsProc lpEnumFunc, IntPtr lParam);
 
         [System.Runtime.InteropServices.DllImport("user32.dll")]
-        public static extern IntPtr FindWindow(string lpClassName, string lpWindowName);
+        public static extern IntPtr FindWindow(string lpClassName, string? lpWindowName);
 
         [System.Runtime.InteropServices.DllImport("user32.dll")]
-        public static extern IntPtr FindWindowEx(IntPtr hwndParent, IntPtr hwndChildAfter, string lpszClass, string lpszWindow);
+        public static extern IntPtr FindWindowEx(IntPtr hwndParent, IntPtr hwndChildAfter, string lpszClass, string? lpszWindow);
 
         [System.Runtime.InteropServices.DllImport("user32.dll")]
         public static extern IntPtr GetDesktopWindow();
