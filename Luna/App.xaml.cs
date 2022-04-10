@@ -22,7 +22,7 @@ namespace Luna
             base.OnStartup(e);
 
             var contextMenuStrip = new System.Windows.Forms.ContextMenuStrip();
-            var window = new MainWindow() { Opacity = 0 };
+            var frame = new Frame() { Opacity = 0 };
 
             contextMenuStrip.Items.Add(Luna.Resources.Switch, null, (sender, args) =>
             {
@@ -33,21 +33,21 @@ namespace Luna
 
                 if (dialog.ShowDialog() == true)
                 {
-                    MainWindow? window = this.MainWindow as MainWindow;
+                    Frame? frame = this.MainWindow as Frame;
 
-                    if (window != null)
+                    if (frame != null)
                     {
-                        window.Source = dialog.FileName;
+                        frame.Source = dialog.FileName;
                     }
                 }
             });
             contextMenuStrip.Items.Add(Luna.Resources.Refresh, null, (sender, args) =>
             {
-                MainWindow? window = this.MainWindow as MainWindow;
+                Frame? frame = this.MainWindow as Frame;
 
-                if (window != null)
+                if (frame != null)
                 {
-                    window.Refresh();
+                    frame.Refresh();
                 }
             });
             contextMenuStrip.Items.Add("-");
@@ -58,8 +58,8 @@ namespace Luna
 
             this.notifyIcon = new System.Windows.Forms.NotifyIcon { Visible = true, Icon = new System.Drawing.Icon(GetResourceStream(new Uri("Luna.ico", UriKind.Relative)).Stream), Text = System.Reflection.Assembly.GetExecutingAssembly().GetName().Name, ContextMenuStrip = contextMenuStrip };
 
-            window.Show();
-            window.Hide();
+            frame.Show();
+            frame.Hide();
         }
 
         protected override void OnExit(ExitEventArgs e)
