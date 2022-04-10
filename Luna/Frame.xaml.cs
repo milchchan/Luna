@@ -194,17 +194,45 @@ namespace Luna
                     {
                         Frame.s_hHook = NativeMethods.SetWindowsHookEx(WH_MOUSE_LL, (int nCode, IntPtr wParam, IntPtr lParam) =>
                         {
-                            const int WM_MOUSEMOVE = 0x0200;
-
-                            if (nCode >= 0 && WM_MOUSEMOVE == wParam.ToInt32())
+                            if (nCode >= 0)
                             {
-                                Frame? frame = Application.Current.MainWindow as Frame;
+                                const int WM_MOUSEMOVE = 0x0200;
+                                const int WM_LBUTTONDOWN = 0x0201;
+                                const int WM_LBUTTONUP = 0x0202;
+                                int message = wParam.ToInt32();
 
-                                if (frame != null)
+                                if (message == WM_MOUSEMOVE)
                                 {
-                                    NativeMethods.MSLLHOOKSTRUCT hookStruct = (NativeMethods.MSLLHOOKSTRUCT)System.Runtime.InteropServices.Marshal.PtrToStructure(lParam, typeof(NativeMethods.MSLLHOOKSTRUCT))!;
+                                    Frame? frame = Application.Current.MainWindow as Frame;
 
-                                    frame.browser!.GetBrowser().GetHost().SendMouseMoveEvent(new CefSharp.MouseEvent(hookStruct.pt.x, hookStruct.pt.y, CefSharp.CefEventFlags.None), false);
+                                    if (frame != null)
+                                    {
+                                        NativeMethods.MSLLHOOKSTRUCT hookStruct = (NativeMethods.MSLLHOOKSTRUCT)System.Runtime.InteropServices.Marshal.PtrToStructure(lParam, typeof(NativeMethods.MSLLHOOKSTRUCT))!;
+
+                                        frame.browser!.GetBrowser().GetHost().SendMouseMoveEvent(new CefSharp.MouseEvent(hookStruct.pt.x, hookStruct.pt.y, CefSharp.CefEventFlags.None), false);
+                                    }
+                                }
+                                else if (message == WM_LBUTTONDOWN)
+                                {
+                                    Frame? frame = Application.Current.MainWindow as Frame;
+
+                                    if (frame != null)
+                                    {
+                                        NativeMethods.MSLLHOOKSTRUCT hookStruct = (NativeMethods.MSLLHOOKSTRUCT)System.Runtime.InteropServices.Marshal.PtrToStructure(lParam, typeof(NativeMethods.MSLLHOOKSTRUCT))!;
+
+                                        frame.browser!.GetBrowser().GetHost().SendMouseClickEvent(new CefSharp.MouseEvent(hookStruct.pt.x, hookStruct.pt.y, CefSharp.CefEventFlags.None), CefSharp.MouseButtonType.Left, false, 1);
+                                    }
+                                }
+                                else if (message == WM_LBUTTONUP)
+                                {
+                                    Frame? frame = Application.Current.MainWindow as Frame;
+
+                                    if (frame != null)
+                                    {
+                                        NativeMethods.MSLLHOOKSTRUCT hookStruct = (NativeMethods.MSLLHOOKSTRUCT)System.Runtime.InteropServices.Marshal.PtrToStructure(lParam, typeof(NativeMethods.MSLLHOOKSTRUCT))!;
+
+                                        frame.browser!.GetBrowser().GetHost().SendMouseClickEvent(new CefSharp.MouseEvent(hookStruct.pt.x, hookStruct.pt.y, CefSharp.CefEventFlags.None), CefSharp.MouseButtonType.Left, true, 1);
+                                    }
                                 }
                             }
 
