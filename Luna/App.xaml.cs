@@ -21,8 +21,18 @@ namespace Luna
         {
             base.OnStartup(e);
 
-            var contextMenuStrip = new System.Windows.Forms.ContextMenuStrip();
             var frame = new Frame() { Opacity = 0 };
+            var contextMenuStrip = new System.Windows.Forms.ContextMenuStrip();
+            var duplicateMenuStrip = new System.Windows.Forms.ToolStripMenuItem(Luna.Resources.Duplicate, null, (sender, args) =>
+            {
+                System.Windows.Forms.ToolStripMenuItem? menuItem = sender as System.Windows.Forms.ToolStripMenuItem;
+                Frame? frame = this.MainWindow as Frame;
+
+                if (menuItem != null && frame != null)
+                {
+                    menuItem.Checked = frame.IsDuplicate = !frame.IsDuplicate;
+                }
+            }) { Checked = frame.IsDuplicate };
 
             contextMenuStrip.Items.Add(Luna.Resources.Switch, null, (sender, args) =>
             {
@@ -41,6 +51,7 @@ namespace Luna
                     }
                 }
             });
+            contextMenuStrip.Items.Add(duplicateMenuStrip);
             contextMenuStrip.Items.Add(Luna.Resources.Refresh, null, (sender, args) =>
             {
                 Frame? frame = this.MainWindow as Frame;
@@ -163,10 +174,24 @@ namespace Luna
             public int bottom;
         }
 
-        public const int SRCCOPY = 0x00CC0020; // BitBlt dwRop parameter
+        public enum StretchBltMode : int
+        {
+            STRETCH_ANDSCANS = 1,
+            STRETCH_ORSCANS = 2,
+            STRETCH_DELETESCANS = 3,
+            STRETCH_HALFTONE = 4,
+        }
+
+        public const uint SRCCOPY = 0x00CC0020;
 
         [System.Runtime.InteropServices.DllImport("gdi32.dll")]
-        public static extern bool BitBlt(IntPtr hObject, int nXDest, int nYDest, int nWidth, int nHeight, IntPtr hObjectSource, int nXSrc, int nYSrc, int dwRop);
+        public static extern bool BitBlt(IntPtr hObject, int nXDest, int nYDest, int nWidth, int nHeight, IntPtr hObjectSource, int nXSrc, int nYSrc, uint dwRop);
+
+        [System.Runtime.InteropServices.DllImport("gdi32.dll")]
+        public static extern int SetStretchBltMode(IntPtr hdc, StretchBltMode iStretchMode);
+
+        [System.Runtime.InteropServices.DllImport("gdi32.dll")]
+        public static extern bool StretchBlt(IntPtr hdcDest, int nXOriginDest, int nYOriginDest, int nWidthDest, int nHeightDest, IntPtr hdcSrc, int nXOriginSrc, int nYOriginSrc, int nWidthSrc, int nHeightSrc, uint dwRop);
 
         [System.Runtime.InteropServices.DllImport("gdi32.dll")]
         public static extern IntPtr CreateCompatibleBitmap(IntPtr hDC, int nWidth, int nHeight);
