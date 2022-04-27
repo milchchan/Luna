@@ -25,7 +25,6 @@ namespace Luna
         private int forceRedraws = 0;
         private int frameRate = 15;
         private string? source = null;
-        private Rect[]? screens = null;
 
         public string? Source
         {
@@ -52,30 +51,6 @@ namespace Luna
 
                 this.source = value;
                 this.browser!.Load(url);
-            }
-        }
-
-        public bool IsDuplicate
-        {
-            get
-            {
-                if (screens == null)
-                {
-                    return false;
-                }
-
-                return true;
-            }
-            set
-            {
-                if (value)
-                {
-                    this.screens = UpdateScreens();
-                }
-                else
-                {
-                    this.screens = null;
-                }
             }
         }
 
@@ -113,11 +88,6 @@ namespace Luna
                 {
                     this.source = config1.AppSettings.Settings["Source"].Value;
                 }
-
-                if (config1.AppSettings.Settings["Duplicate"] != null && config1.AppSettings.Settings["Duplicate"].Value.Length > 0)
-                {
-                    this.IsDuplicate = Boolean.Parse(config1.AppSettings.Settings["Duplicate"].Value);
-                }
             }
             else
             {
@@ -146,18 +116,6 @@ namespace Luna
                 {
                     this.source = config1.AppSettings.Settings["Source"].Value;
                 }
-
-                if (config1.AppSettings.Settings["Duplicate"] == null)
-                {
-                    if (config2.AppSettings.Settings["Duplicate"] != null && config2.AppSettings.Settings["Duplicate"].Value.Length > 0)
-                    {
-                        this.IsDuplicate = Boolean.Parse(config2.AppSettings.Settings["Duplicate"].Value);
-                    }
-                }
-                else if (config1.AppSettings.Settings["Duplicate"].Value.Length > 0)
-                {
-                    this.IsDuplicate = Boolean.Parse(config1.AppSettings.Settings["Duplicate"].Value);
-                }
             }
 
             //CefSharp.Cef.EnableHighDPISupport();
@@ -183,16 +141,7 @@ namespace Luna
             }
 
             this.browser = new CefSharp.OffScreen.ChromiumWebBrowser(url, new CefSharp.BrowserSettings() { WindowlessFrameRate = this.frameRate }, new CefSharp.RequestContext(new CefSharp.RequestContextSettings()));
-
-            if (this.IsDuplicate)
-            {
-                this.browser.Size = new System.Drawing.Size((int)SystemParameters.PrimaryScreenWidth, (int)SystemParameters.PrimaryScreenHeight);
-            }
-            else
-            {
-                this.browser.Size = new System.Drawing.Size((int)SystemParameters.VirtualScreenWidth, (int)SystemParameters.VirtualScreenHeight);
-            }
-
+            this.browser.Size = new System.Drawing.Size((int)SystemParameters.VirtualScreenWidth, (int)SystemParameters.VirtualScreenHeight);
             this.browser.Paint += (object sender, CefSharp.OffScreen.OnPaintEventArgs e) =>
             {
                 lock (this.syncObj)
@@ -201,8 +150,6 @@ namespace Luna
                     {
                         using (var bitmap = new System.Drawing.Bitmap(e.Width, e.Height, 4 * e.Width, System.Drawing.Imaging.PixelFormat.Format32bppArgb, e.BufferHandle))
                         {
-                            this.forceRedraws = 1;
-
                             if (this.forceRedraws > 0)
                             {
                                 DrawDesktop(this.hWnd, bitmap, 0, 0, (int)SystemParameters.VirtualScreenWidth, (int)SystemParameters.VirtualScreenHeight, true);
@@ -262,22 +209,7 @@ namespace Luna
                                     {
                                         NativeMethods.MSLLHOOKSTRUCT hookStruct = (NativeMethods.MSLLHOOKSTRUCT)System.Runtime.InteropServices.Marshal.PtrToStructure(lParam, typeof(NativeMethods.MSLLHOOKSTRUCT))!;
 
-                                        if (this.screens == null)
-                                        {
-                                            frame.browser!.GetBrowser().GetHost().SendMouseMoveEvent(new CefSharp.MouseEvent(hookStruct.pt.x, hookStruct.pt.y, CefSharp.CefEventFlags.None), false);
-                                        }
-                                        else
-                                        {
-                                            foreach (var screen in this.screens)
-                                            {
-                                                if (screen.X <= hookStruct.pt.x && hookStruct.pt.x < screen.X + screen.Width && screen.Y <= hookStruct.pt.y && hookStruct.pt.y < screen.Y + screen.Height)
-                                                {
-                                                    frame.browser!.GetBrowser().GetHost().SendMouseMoveEvent(new CefSharp.MouseEvent((int)(SystemParameters.PrimaryScreenWidth / screen.Width * (hookStruct.pt.x - screen.X)), (int)(SystemParameters.PrimaryScreenHeight / screen.Height * (hookStruct.pt.y - screen.Y)), CefSharp.CefEventFlags.None), false);
-
-                                                    break;
-                                                }
-                                            }
-                                        }
+                                        frame.browser!.GetBrowser().GetHost().SendMouseMoveEvent(new CefSharp.MouseEvent(hookStruct.pt.x, hookStruct.pt.y, CefSharp.CefEventFlags.LeftMouseButton), false);
                                     }
                                 }
                                 else if (message == WM_LBUTTONDOWN)
@@ -288,22 +220,7 @@ namespace Luna
                                     {
                                         NativeMethods.MSLLHOOKSTRUCT hookStruct = (NativeMethods.MSLLHOOKSTRUCT)System.Runtime.InteropServices.Marshal.PtrToStructure(lParam, typeof(NativeMethods.MSLLHOOKSTRUCT))!;
 
-                                        if (this.screens == null)
-                                        {
-                                            frame.browser!.GetBrowser().GetHost().SendMouseClickEvent(new CefSharp.MouseEvent(hookStruct.pt.x, hookStruct.pt.y, CefSharp.CefEventFlags.None), CefSharp.MouseButtonType.Left, false, 1);
-                                        }
-                                        else
-                                        {
-                                            foreach (var screen in this.screens)
-                                            {
-                                                if (screen.X <= hookStruct.pt.x && hookStruct.pt.x < screen.X + screen.Width && screen.Y <= hookStruct.pt.y && hookStruct.pt.y < screen.Y + screen.Height)
-                                                {
-                                                    frame.browser!.GetBrowser().GetHost().SendMouseClickEvent(new CefSharp.MouseEvent((int)(SystemParameters.PrimaryScreenWidth / screen.Width * (hookStruct.pt.x - screen.X)), (int)(SystemParameters.PrimaryScreenHeight / screen.Height * (hookStruct.pt.y - screen.Y)), CefSharp.CefEventFlags.None), CefSharp.MouseButtonType.Left, false, 1);
-
-                                                    break;
-                                                }
-                                            }
-                                        }
+                                        frame.browser!.GetBrowser().GetHost().SendMouseClickEvent(new CefSharp.MouseEvent(hookStruct.pt.x, hookStruct.pt.y, CefSharp.CefEventFlags.LeftMouseButton), CefSharp.MouseButtonType.Left, false, 1);
                                     }
                                 }
                                 else if (message == WM_LBUTTONUP)
@@ -314,22 +231,7 @@ namespace Luna
                                     {
                                         NativeMethods.MSLLHOOKSTRUCT hookStruct = (NativeMethods.MSLLHOOKSTRUCT)System.Runtime.InteropServices.Marshal.PtrToStructure(lParam, typeof(NativeMethods.MSLLHOOKSTRUCT))!;
 
-                                        if (this.screens == null)
-                                        {
-                                            frame.browser!.GetBrowser().GetHost().SendMouseClickEvent(new CefSharp.MouseEvent(hookStruct.pt.x, hookStruct.pt.y, CefSharp.CefEventFlags.None), CefSharp.MouseButtonType.Left, true, 1);
-                                        }
-                                        else
-                                        {
-                                            foreach (var screen in this.screens)
-                                            {
-                                                if (screen.X <= hookStruct.pt.x && hookStruct.pt.x < screen.X + screen.Width && screen.Y <= hookStruct.pt.y && hookStruct.pt.y < screen.Y + screen.Height)
-                                                {
-                                                    frame.browser!.GetBrowser().GetHost().SendMouseClickEvent(new CefSharp.MouseEvent((int)(SystemParameters.PrimaryScreenWidth / screen.Width * (hookStruct.pt.x - screen.X)), (int)(SystemParameters.PrimaryScreenHeight / screen.Height * (hookStruct.pt.y - screen.Y)), CefSharp.CefEventFlags.None), CefSharp.MouseButtonType.Left, true, 1);
-
-                                                    break;
-                                                }
-                                            }
-                                        }
+                                        frame.browser!.GetBrowser().GetHost().SendMouseClickEvent(new CefSharp.MouseEvent(hookStruct.pt.x, hookStruct.pt.y, CefSharp.CefEventFlags.LeftMouseButton), CefSharp.MouseButtonType.Left, true, 1);
                                     }
                                 }
                             }
@@ -442,15 +344,6 @@ namespace Luna
                         {
                             config.AppSettings.Settings["Source"].Value = this.source;
                         }
-                        
-                        if (config.AppSettings.Settings["Duplicate"] == null)
-                        {
-                            config.AppSettings.Settings.Add("Duplicate", this.IsDuplicate.ToString());
-                        }
-                        else
-                        {
-                            config.AppSettings.Settings["Duplicate"].Value = this.IsDuplicate.ToString();
-                        }
 
                         config.Save(System.Configuration.ConfigurationSaveMode.Modified);
                     }
@@ -477,15 +370,6 @@ namespace Luna
                                     config.AppSettings.Settings["Source"].Value = this.source;
                                 }
 
-                                if (config.AppSettings.Settings["Duplicate"] == null)
-                                {
-                                    config.AppSettings.Settings.Add("Duplicate", this.IsDuplicate.ToString());
-                                }
-                                else
-                                {
-                                    config.AppSettings.Settings["Duplicate"].Value = this.IsDuplicate.ToString();
-                                }
-
                                 config.Save(System.Configuration.ConfigurationSaveMode.Modified);
                             }
                             else
@@ -501,15 +385,6 @@ namespace Luna
                                 else
                                 {
                                     config.AppSettings.Settings["Source"].Value = this.source;
-                                }
-
-                                if (config.AppSettings.Settings["Duplicate"] == null)
-                                {
-                                    config.AppSettings.Settings.Add("Duplicate", this.IsDuplicate.ToString());
-                                }
-                                else
-                                {
-                                    config.AppSettings.Settings["Duplicate"].Value = this.IsDuplicate.ToString();
                                 }
 
                                 foreach (System.Configuration.ConfigurationSection section in (from section in config.Sections.Cast<System.Configuration.ConfigurationSection>() where !config.AppSettings.SectionInformation.Name.Equals(section.SectionInformation.Name) select section).ToArray())
@@ -535,15 +410,6 @@ namespace Luna
                             else
                             {
                                 config.AppSettings.Settings["Source"].Value = this.source;
-                            }
-
-                            if (config.AppSettings.Settings["Duplicate"] == null)
-                            {
-                                config.AppSettings.Settings.Add("Duplicate", this.IsDuplicate.ToString());
-                            }
-                            else
-                            {
-                                config.AppSettings.Settings["Duplicate"].Value = this.IsDuplicate.ToString();
                             }
 
                             foreach (System.Configuration.ConfigurationSection section in (from section in config.Sections.Cast<System.Configuration.ConfigurationSection>() where !config.AppSettings.SectionInformation.Name.Equals(section.SectionInformation.Name) select section).ToArray())
@@ -586,15 +452,6 @@ namespace Luna
                         config.AppSettings.Settings["Source"].Value = this.source;
                     }
 
-                    if (config.AppSettings.Settings["Duplicate"] == null)
-                    {
-                        config.AppSettings.Settings.Add("Duplicate", this.IsDuplicate.ToString());
-                    }
-                    else
-                    {
-                        config.AppSettings.Settings["Duplicate"].Value = this.IsDuplicate.ToString();
-                    }
-
                     config.Save(System.Configuration.ConfigurationSaveMode.Modified);
                 }
             }
@@ -604,45 +461,13 @@ namespace Luna
 
         private void OnDisplaySettingsChanged(object sender, EventArgs e)
         {
-            if (this.IsDuplicate)
-            {
-                this.screens = UpdateScreens();
-                this.browser!.Size = new System.Drawing.Size((int)SystemParameters.PrimaryScreenWidth, (int)SystemParameters.PrimaryScreenHeight);
-            }
-            else
-            {
-                this.browser!.Size = new System.Drawing.Size((int)SystemParameters.VirtualScreenWidth, (int)SystemParameters.VirtualScreenHeight);
-            }
-            
+            this.browser!.Size = new System.Drawing.Size((int)SystemParameters.VirtualScreenWidth, (int)SystemParameters.VirtualScreenHeight);
             this.forceRedraws = this.frameRate;
         }
 
         public void Refresh()
         {
             this.browser!.GetBrowser().Reload();
-        }
-
-        private Rect[] UpdateScreens()
-        {
-            var columns = (int)Math.Ceiling(SystemParameters.VirtualScreenWidth / SystemParameters.PrimaryScreenWidth);
-            var rows = (int)Math.Ceiling(SystemParameters.VirtualScreenHeight / SystemParameters.PrimaryScreenHeight);
-            var screens = new Rect[columns * rows];
-            var height = SystemParameters.VirtualScreenHeight;
-
-            for (var y = 0; y < rows; y++)
-            {
-                var width = SystemParameters.VirtualScreenWidth;
-
-                for (var x = 0; x < columns; x++)
-                {
-                    screens[x + y * columns] = new Rect(x * SystemParameters.PrimaryScreenWidth, y * SystemParameters.PrimaryScreenHeight, width >= SystemParameters.PrimaryScreenWidth ? SystemParameters.PrimaryScreenWidth : width, height >= SystemParameters.PrimaryScreenHeight ? SystemParameters.PrimaryScreenHeight : height);
-                    width -= SystemParameters.PrimaryScreenWidth;
-                }
-
-                height -= SystemParameters.PrimaryScreenHeight;
-            }
-            
-            return screens;
         }
 
         private void SaveDesktop()
@@ -735,32 +560,11 @@ namespace Luna
 
                 if (force)
                 {
-                    if (this.screens == null)
-                    {
-                        NativeMethods.BitBlt(hWorkerwDc, 0, 0, bitmap.Width, bitmap.Height, hCompatibleDc, 0, 0, NativeMethods.SRCCOPY);
-                    }
-                    else
-                    {
-                        NativeMethods.SetStretchBltMode(hWorkerwDc, NativeMethods.StretchBltMode.STRETCH_DELETESCANS);
-                        
-                        foreach (var screen in this.screens)
-                        {
-                            NativeMethods.StretchBlt(hWorkerwDc, (int)screen.X, (int)screen.Y, (int)(width * screen.Width / SystemParameters.PrimaryScreenWidth), (int)(height * screen.Height / SystemParameters.PrimaryScreenHeight), hCompatibleDc, 0, 0, bitmap.Width, bitmap.Height, NativeMethods.SRCCOPY);
-                        }
-                    }
-                }
-                else if (this.screens == null)
-                {
-                    NativeMethods.BitBlt(hWorkerwDc, x, y, width, height, hCompatibleDc, 0, 0, NativeMethods.SRCCOPY);
+                    NativeMethods.BitBlt(hWorkerwDc, 0, 0, bitmap.Width, bitmap.Height, hCompatibleDc, 0, 0, NativeMethods.SRCCOPY);
                 }
                 else
                 {
-                    NativeMethods.SetStretchBltMode(hWorkerwDc, NativeMethods.StretchBltMode.STRETCH_DELETESCANS);
-
-                    foreach (var screen in this.screens)
-                    {
-                        NativeMethods.StretchBlt(hWorkerwDc, (int)(screen.X + screen.Width / SystemParameters.PrimaryScreenWidth * x), (int)(screen.Y + screen.Height / SystemParameters.PrimaryScreenHeight * y), (int)(width * screen.Width / SystemParameters.PrimaryScreenWidth), (int)(height * screen.Height / SystemParameters.PrimaryScreenHeight), hCompatibleDc, 0, 0, bitmap.Width, bitmap.Height, NativeMethods.SRCCOPY);
-                    }
+                    NativeMethods.BitBlt(hWorkerwDc, x, y, width, height, hCompatibleDc, 0, 0, NativeMethods.SRCCOPY);
                 }
 
                 NativeMethods.SelectObject(hCompatibleDc, hGdiObj);
