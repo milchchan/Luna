@@ -25,6 +25,7 @@ namespace Luna
         private int forceRedraws = 0;
         private int frameRate = 15;
         private string? source = null;
+        public bool IsLocked { get; set; } = false;
 
         public string? Source
         {
@@ -88,6 +89,11 @@ namespace Luna
                 {
                     this.source = config1.AppSettings.Settings["Source"].Value;
                 }
+
+                if (config1.AppSettings.Settings["Lock"] != null && config1.AppSettings.Settings["Lock"].Value.Length > 0)
+                {
+                    this.IsLocked = Boolean.Parse(config1.AppSettings.Settings["Lock"].Value);
+                }
             }
             else
             {
@@ -109,12 +115,24 @@ namespace Luna
                 {
                     if (config2.AppSettings.Settings["Source"] != null && config2.AppSettings.Settings["Source"].Value.Length > 0)
                     {
-                        this.source = config2.AppSettings.Settings["Scale"].Value;
+                        this.source = config2.AppSettings.Settings["Source"].Value;
                     }
                 }
                 else if (config1.AppSettings.Settings["Source"].Value.Length > 0)
                 {
                     this.source = config1.AppSettings.Settings["Source"].Value;
+                }
+
+                if (config1.AppSettings.Settings["Lock"] == null)
+                {
+                    if (config2.AppSettings.Settings["Lock"] != null && config2.AppSettings.Settings["Lock"].Value.Length > 0)
+                    {
+                        this.IsLocked = Boolean.Parse(config2.AppSettings.Settings["Lock"].Value);
+                    }
+                }
+                else if (config1.AppSettings.Settings["Lock"].Value.Length > 0)
+                {
+                    this.IsLocked = Boolean.Parse(config1.AppSettings.Settings["Lock"].Value);
                 }
             }
 
@@ -169,8 +187,7 @@ namespace Luna
                         }
                     }
                 }
-            }
-            !;
+            }!;
 
             Microsoft.Win32.SystemEvents.DisplaySettingsChanged += OnDisplaySettingsChanged!;
         }
@@ -194,7 +211,7 @@ namespace Luna
                     {
                         Frame.s_hHook = NativeMethods.SetWindowsHookEx(WH_MOUSE_LL, (int nCode, IntPtr wParam, IntPtr lParam) =>
                         {
-                            if (nCode >= 0)
+                            if (!this.IsLocked && nCode >= 0)
                             {
                                 const int WM_MOUSEMOVE = 0x0200;
                                 const int WM_LBUTTONDOWN = 0x0201;
@@ -345,6 +362,15 @@ namespace Luna
                             config.AppSettings.Settings["Source"].Value = this.source;
                         }
 
+                        if (config.AppSettings.Settings["Lock"] == null)
+                        {
+                            config.AppSettings.Settings.Add("Lock", this.IsLocked.ToString());
+                        }
+                        else
+                        {
+                            config.AppSettings.Settings["Lock"].Value = this.IsLocked.ToString();
+                        }
+
                         config.Save(System.Configuration.ConfigurationSaveMode.Modified);
                     }
                     else
@@ -370,6 +396,15 @@ namespace Luna
                                     config.AppSettings.Settings["Source"].Value = this.source;
                                 }
 
+                                if (config.AppSettings.Settings["Lock"] == null)
+                                {
+                                    config.AppSettings.Settings.Add("Lock", this.IsLocked.ToString());
+                                }
+                                else
+                                {
+                                    config.AppSettings.Settings["Lock"].Value = this.IsLocked.ToString();
+                                }
+
                                 config.Save(System.Configuration.ConfigurationSaveMode.Modified);
                             }
                             else
@@ -385,6 +420,15 @@ namespace Luna
                                 else
                                 {
                                     config.AppSettings.Settings["Source"].Value = this.source;
+                                }
+
+                                if (config.AppSettings.Settings["Lock"] == null)
+                                {
+                                    config.AppSettings.Settings.Add("Lock", this.IsLocked.ToString());
+                                }
+                                else
+                                {
+                                    config.AppSettings.Settings["Lock"].Value = this.IsLocked.ToString();
                                 }
 
                                 foreach (System.Configuration.ConfigurationSection section in (from section in config.Sections.Cast<System.Configuration.ConfigurationSection>() where !config.AppSettings.SectionInformation.Name.Equals(section.SectionInformation.Name) select section).ToArray())
@@ -410,6 +454,15 @@ namespace Luna
                             else
                             {
                                 config.AppSettings.Settings["Source"].Value = this.source;
+                            }
+
+                            if (config.AppSettings.Settings["Lock"] == null)
+                            {
+                                config.AppSettings.Settings.Add("Lock", this.IsLocked.ToString());
+                            }
+                            else
+                            {
+                                config.AppSettings.Settings["Lock"].Value = this.IsLocked.ToString();
                             }
 
                             foreach (System.Configuration.ConfigurationSection section in (from section in config.Sections.Cast<System.Configuration.ConfigurationSection>() where !config.AppSettings.SectionInformation.Name.Equals(section.SectionInformation.Name) select section).ToArray())
@@ -450,6 +503,15 @@ namespace Luna
                     else
                     {
                         config.AppSettings.Settings["Source"].Value = this.source;
+                    }
+
+                    if (config.AppSettings.Settings["Lock"] == null)
+                    {
+                        config.AppSettings.Settings.Add("Lock", this.IsLocked.ToString());
+                    }
+                    else
+                    {
+                        config.AppSettings.Settings["Lock"].Value = this.IsLocked.ToString();
                     }
 
                     config.Save(System.Configuration.ConfigurationSaveMode.Modified);

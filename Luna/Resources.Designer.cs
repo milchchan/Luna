@@ -79,6 +79,15 @@ namespace Luna {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Lock.
+        /// </summary>
+        internal static string Lock {
+            get {
+                return ResourceManager.GetString("Lock", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Refresh.
         /// </summary>
         internal static string Refresh {

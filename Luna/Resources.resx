@@ -123,6 +123,9 @@
   <data name="Filter" xml:space="preserve">
     <value>HTML|*.html;*.htm</value>
   </data>
+  <data name="Lock" xml:space="preserve">
+    <value>Lock</value>
+  </data>
   <data name="Refresh" xml:space="preserve">
     <value>Refresh</value>
   </data>
