@@ -218,10 +218,10 @@ namespace Luna
                     this.browser.BrowserInitialized += (object sender, EventArgs e) =>
                     {
                         this.browser.GetBrowser().GetHost().SetAudioMuted(this.isMuted);
-                        this.browser.Paint += this.OnPaint!;
                     }!;
+                    this.browser.Paint += this.OnPaint!;
 
-                    Microsoft.Win32.SystemEvents.DisplaySettingsChanged += OnDisplaySettingsChanged!;
+                    Microsoft.Win32.SystemEvents.DisplaySettingsChanged += this.OnDisplaySettingsChanged!;
 
                     await this.browser.WaitForInitialLoadAsync();
 
@@ -307,7 +307,7 @@ namespace Luna
                     const uint SPIF_SENDWININICHANGE = 2;
                     string path = new String('\0', MAX_PATH);
 
-                    Microsoft.Win32.SystemEvents.DisplaySettingsChanged -= OnDisplaySettingsChanged!;
+                    Microsoft.Win32.SystemEvents.DisplaySettingsChanged -= this.OnDisplaySettingsChanged!;
 
                     this.browser!.Paint -= this.OnPaint!;
 
