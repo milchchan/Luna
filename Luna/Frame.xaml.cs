@@ -60,9 +60,8 @@ namespace Luna
             InitializeComponent();
 
             System.Configuration.Configuration? config1 = null;
-            string directory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), System.Reflection.Assembly.GetExecutingAssembly().GetName().Name!);
-            string url;
-
+            var directory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), System.Reflection.Assembly.GetExecutingAssembly().GetName().Name!);
+            
             if (Directory.Exists(directory))
             {
                 string filename = Path.GetFileName(System.Reflection.Assembly.GetExecutingAssembly().Location);
@@ -135,68 +134,14 @@ namespace Luna
                     this.IsLocked = Boolean.Parse(config1.AppSettings.Settings["Lock"].Value);
                 }
             }
-
-            //CefSharp.Cef.EnableHighDPISupport();
-            CefSharp.Cef.Initialize(new CefSharp.OffScreen.CefSettings
-            {
-                WindowlessRenderingEnabled = true,
-                CachePath = null,
-                Locale = System.Globalization.CultureInfo.CurrentCulture.TwoLetterISOLanguageName,
-                AcceptLanguageList = System.Globalization.CultureInfo.CurrentCulture.Name
-            });
-
-            if (Regex.IsMatch(this.source!, @"^\w+://", RegexOptions.CultureInvariant))
-            {
-                url = this.source!;
-            }
-            else if (System.IO.Path.IsPathRooted(this.source))
-            {
-                url = String.Join("file:///", this.source);
-            }
-            else
-            {
-                url = String.Join("file:///", System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)!, this.source!));
-            }
-
-            this.browser = new CefSharp.OffScreen.ChromiumWebBrowser(url, new CefSharp.BrowserSettings() { WindowlessFrameRate = this.frameRate }, new CefSharp.RequestContext(new CefSharp.RequestContextSettings()));
-            this.browser.Size = new System.Drawing.Size((int)SystemParameters.VirtualScreenWidth, (int)SystemParameters.VirtualScreenHeight);
-            this.browser.Paint += (object sender, CefSharp.OffScreen.OnPaintEventArgs e) =>
-            {
-                lock (this.syncObj)
-                {
-                    if (this.isDrawing)
-                    {
-                        using (var bitmap = new System.Drawing.Bitmap(e.Width, e.Height, 4 * e.Width, System.Drawing.Imaging.PixelFormat.Format32bppArgb, e.BufferHandle))
-                        {
-                            if (this.forceRedraws > 0)
-                            {
-                                DrawDesktop(this.hWnd, bitmap, 0, 0, (int)SystemParameters.VirtualScreenWidth, (int)SystemParameters.VirtualScreenHeight, true);
-                                this.forceRedraws--;
-                            }
-                            else
-                            {
-                                var bitmapData = bitmap.LockBits(new System.Drawing.Rectangle(e.DirtyRect.X, e.DirtyRect.Y, e.DirtyRect.Width, e.DirtyRect.Height), System.Drawing.Imaging.ImageLockMode.ReadOnly, bitmap.PixelFormat);
-
-                                using (var b = new System.Drawing.Bitmap(bitmapData.Width, bitmapData.Height, bitmapData.Stride, bitmap.PixelFormat, bitmapData.Scan0))
-                                {
-                                    DrawDesktop(this.hWnd, b, e.DirtyRect.X, e.DirtyRect.Y, e.DirtyRect.Width, e.DirtyRect.Height, false);
-                                }
-
-                                bitmap.UnlockBits(bitmapData);
-                            }
-                        }
-                    }
-                }
-            }!;
-
-            Microsoft.Win32.SystemEvents.DisplaySettingsChanged += OnDisplaySettingsChanged!;
         }
 
         protected override void OnSourceInitialized(EventArgs e)
         {
             base.OnSourceInitialized(e);
 
-            System.Windows.Interop.HwndSource? hwndSource = PresentationSource.FromVisual(this) as System.Windows.Interop.HwndSource;
+            var presentationSource = PresentationSource.FromVisual(this);
+            System.Windows.Interop.HwndSource? hwndSource = presentationSource as System.Windows.Interop.HwndSource;
 
             if (hwndSource != null)
             {
@@ -206,6 +151,68 @@ namespace Luna
 
                 if (this == Application.Current.MainWindow)
                 {
+                    var settings = new CefSharp.OffScreen.CefSettings
+                    {
+                        WindowlessRenderingEnabled = true,
+                        CachePath = null,
+                        Locale = System.Globalization.CultureInfo.CurrentCulture.TwoLetterISOLanguageName,
+                        AcceptLanguageList = System.Globalization.CultureInfo.CurrentCulture.Name,
+                        LogSeverity = CefSharp.LogSeverity.Disable
+                    };
+                    string url;
+
+                    //settings.CefCommandLineArgs.Add("disable-gpu", "1");
+                    //settings.CefCommandLineArgs.Add("disable-gpu-vsync", "1");
+
+                    //CefSharp.Cef.EnableHighDPISupport();
+                    CefSharp.Cef.Initialize(settings);
+
+                    if (Regex.IsMatch(this.source!, @"^\w+://", RegexOptions.CultureInvariant))
+                    {
+                        url = this.source!;
+                    }
+                    else if (System.IO.Path.IsPathRooted(this.source))
+                    {
+                        url = String.Join("file:///", this.source);
+                    }
+                    else
+                    {
+                        url = String.Join("file:///", System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)!, this.source!));
+                    }
+
+                    this.browser = new CefSharp.OffScreen.ChromiumWebBrowser(url, new CefSharp.BrowserSettings() { WindowlessFrameRate = this.frameRate }, new CefSharp.RequestContext(new CefSharp.RequestContextSettings()));
+                    this.browser.Size = new System.Drawing.Size((int)Math.Floor(SystemParameters.VirtualScreenWidth * presentationSource.CompositionTarget.TransformToDevice.M11), (int)Math.Floor(SystemParameters.VirtualScreenHeight * presentationSource.CompositionTarget.TransformToDevice.M22));
+                    this.browser.Paint += (object sender, CefSharp.OffScreen.OnPaintEventArgs e) =>
+                    {
+                        lock (this.syncObj)
+                        {
+                            if (this.isDrawing)
+                            {
+                                using (var bitmap = new System.Drawing.Bitmap(e.Width, e.Height, 4 * e.Width, System.Drawing.Imaging.PixelFormat.Format32bppArgb, e.BufferHandle))
+                                {
+                                    if (this.forceRedraws > 0)
+                                    {
+                                        DrawDesktop(this.hWnd, bitmap, 0, 0, this.browser.Size.Width, this.browser.Size.Height, true);
+                                        this.forceRedraws--;
+                                    }
+                                    else
+                                    {
+                                        var bitmapData = bitmap.LockBits(new System.Drawing.Rectangle(e.DirtyRect.X, e.DirtyRect.Y, e.DirtyRect.Width, e.DirtyRect.Height), System.Drawing.Imaging.ImageLockMode.ReadOnly, bitmap.PixelFormat);
+
+                                        using (var b = new System.Drawing.Bitmap(bitmapData.Width, bitmapData.Height, bitmapData.Stride, bitmap.PixelFormat, bitmapData.Scan0))
+                                        {
+                                            DrawDesktop(this.hWnd, b, e.DirtyRect.X, e.DirtyRect.Y, e.DirtyRect.Width, e.DirtyRect.Height, false);
+                                        }
+
+                                        bitmap.UnlockBits(bitmapData);
+                                    }
+                                }
+                            }
+                        }
+                    }!;
+
+                    Microsoft.Win32.SystemEvents.DisplaySettingsChanged += OnDisplaySettingsChanged!;
+
                     using (var curentProcess = System.Diagnostics.Process.GetCurrentProcess())
                     using (var mainModule = curentProcess.MainModule)
                     {
@@ -225,8 +232,9 @@ namespace Luna
                                     if (frame != null)
                                     {
                                         NativeMethods.MSLLHOOKSTRUCT hookStruct = (NativeMethods.MSLLHOOKSTRUCT)System.Runtime.InteropServices.Marshal.PtrToStructure(lParam, typeof(NativeMethods.MSLLHOOKSTRUCT))!;
+                                        var presentationSource = PresentationSource.FromVisual(this);
 
-                                        frame.browser!.GetBrowser().GetHost().SendMouseMoveEvent(new CefSharp.MouseEvent(hookStruct.pt.x, hookStruct.pt.y, CefSharp.CefEventFlags.LeftMouseButton), false);
+                                        frame.browser!.GetBrowser().GetHost().SendMouseMoveEvent(new CefSharp.MouseEvent((int)Math.Floor(hookStruct.pt.x * presentationSource.CompositionTarget.TransformToDevice.M11), (int)Math.Floor(hookStruct.pt.y * presentationSource.CompositionTarget.TransformToDevice.M22), CefSharp.CefEventFlags.LeftMouseButton), false);
                                     }
                                 }
                                 else if (message == WM_LBUTTONDOWN)
@@ -236,8 +244,9 @@ namespace Luna
                                     if (frame != null)
                                     {
                                         NativeMethods.MSLLHOOKSTRUCT hookStruct = (NativeMethods.MSLLHOOKSTRUCT)System.Runtime.InteropServices.Marshal.PtrToStructure(lParam, typeof(NativeMethods.MSLLHOOKSTRUCT))!;
+                                        var presentationSource = PresentationSource.FromVisual(this);
 
-                                        frame.browser!.GetBrowser().GetHost().SendMouseClickEvent(new CefSharp.MouseEvent(hookStruct.pt.x, hookStruct.pt.y, CefSharp.CefEventFlags.LeftMouseButton), CefSharp.MouseButtonType.Left, false, 1);
+                                        frame.browser!.GetBrowser().GetHost().SendMouseClickEvent(new CefSharp.MouseEvent((int)Math.Floor(hookStruct.pt.x * presentationSource.CompositionTarget.TransformToDevice.M11), (int)Math.Floor(hookStruct.pt.y * presentationSource.CompositionTarget.TransformToDevice.M22), CefSharp.CefEventFlags.LeftMouseButton), CefSharp.MouseButtonType.Left, false, 1);
                                     }
                                 }
                                 else if (message == WM_LBUTTONUP)
@@ -247,8 +256,9 @@ namespace Luna
                                     if (frame != null)
                                     {
                                         NativeMethods.MSLLHOOKSTRUCT hookStruct = (NativeMethods.MSLLHOOKSTRUCT)System.Runtime.InteropServices.Marshal.PtrToStructure(lParam, typeof(NativeMethods.MSLLHOOKSTRUCT))!;
+                                        var presentationSource = PresentationSource.FromVisual(this);
 
-                                        frame.browser!.GetBrowser().GetHost().SendMouseClickEvent(new CefSharp.MouseEvent(hookStruct.pt.x, hookStruct.pt.y, CefSharp.CefEventFlags.LeftMouseButton), CefSharp.MouseButtonType.Left, true, 1);
+                                        frame.browser!.GetBrowser().GetHost().SendMouseClickEvent(new CefSharp.MouseEvent((int)Math.Floor(hookStruct.pt.x * presentationSource.CompositionTarget.TransformToDevice.M11), (int)Math.Floor(hookStruct.pt.y * presentationSource.CompositionTarget.TransformToDevice.M22), CefSharp.CefEventFlags.LeftMouseButton), CefSharp.MouseButtonType.Left, true, 1);
                                     }
                                 }
                             }
@@ -305,6 +315,8 @@ namespace Luna
                     }
 
                     Microsoft.Win32.SystemEvents.DisplaySettingsChanged -= OnDisplaySettingsChanged!;
+
+                    handled = true;
 
                     break;
             }
@@ -523,8 +535,15 @@ namespace Luna
 
         private void OnDisplaySettingsChanged(object sender, EventArgs e)
         {
-            this.browser!.Size = new System.Drawing.Size((int)SystemParameters.VirtualScreenWidth, (int)SystemParameters.VirtualScreenHeight);
-            this.forceRedraws = this.frameRate;
+            var presentationSource = PresentationSource.FromVisual(this);
+            var width = (int)Math.Floor(SystemParameters.VirtualScreenWidth * presentationSource.CompositionTarget.TransformToDevice.M11);
+            var height = (int)Math.Floor(SystemParameters.VirtualScreenHeight * presentationSource.CompositionTarget.TransformToDevice.M22);
+            
+            if (this.browser!.Size.Width != width || this.browser.Size.Height != height)
+            {
+                this.browser.Size = new System.Drawing.Size(width, height);
+                this.forceRedraws = this.frameRate;
+            }
         }
 
         public void Refresh()
