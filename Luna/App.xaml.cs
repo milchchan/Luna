@@ -23,6 +23,16 @@ namespace Luna
 
             var frame = new Frame() { Opacity = 0 };
             var contextMenuStrip = new System.Windows.Forms.ContextMenuStrip();
+            var muteMenuStrip = new System.Windows.Forms.ToolStripMenuItem(Luna.Resources.Mute, null, (sender, args) =>
+            {
+                System.Windows.Forms.ToolStripMenuItem? menuItem = sender as System.Windows.Forms.ToolStripMenuItem;
+                Frame? frame = this.MainWindow as Frame;
+
+                if (menuItem != null && frame != null)
+                {
+                    frame.IsMuted = menuItem.Checked = !menuItem.Checked;
+                }
+            }) { Checked = frame.IsMuted };
             var lockMenuStrip = new System.Windows.Forms.ToolStripMenuItem(Luna.Resources.Lock, null, (sender, args) =>
             {
                 System.Windows.Forms.ToolStripMenuItem? menuItem = sender as System.Windows.Forms.ToolStripMenuItem;
@@ -51,6 +61,7 @@ namespace Luna
                     }
                 }
             });
+            contextMenuStrip.Items.Add(muteMenuStrip);
             contextMenuStrip.Items.Add(lockMenuStrip);
             contextMenuStrip.Items.Add(Luna.Resources.Refresh, null, (sender, args) =>
             {

@@ -25,6 +25,7 @@ namespace Luna
         private int forceRedraws = 0;
         private int frameRate = 15;
         private string? source = null;
+        private bool isMuted = true;
         public bool IsLocked { get; set; } = false;
 
         public string? Source
@@ -52,6 +53,19 @@ namespace Luna
 
                 this.source = value;
                 this.browser!.Load(url);
+            }
+        }
+
+        public bool IsMuted
+        {
+            get
+            {
+                return this.isMuted;
+            }
+            set
+            {
+                this.isMuted = value;
+                this.browser!.GetBrowser().GetHost().SetAudioMuted(this.isMuted);
             }
         }
 
@@ -93,6 +107,11 @@ namespace Luna
                 {
                     this.IsLocked = Boolean.Parse(config1.AppSettings.Settings["Lock"].Value);
                 }
+
+                if (config1.AppSettings.Settings["Mute"] != null && config1.AppSettings.Settings["Mute"].Value.Length > 0)
+                {
+                    this.isMuted = Boolean.Parse(config1.AppSettings.Settings["Mute"].Value);
+                }
             }
             else
             {
@@ -132,6 +151,18 @@ namespace Luna
                 else if (config1.AppSettings.Settings["Lock"].Value.Length > 0)
                 {
                     this.IsLocked = Boolean.Parse(config1.AppSettings.Settings["Lock"].Value);
+                }
+
+                if (config1.AppSettings.Settings["Mute"] == null)
+                {
+                    if (config2.AppSettings.Settings["Mute"] != null && config2.AppSettings.Settings["Mute"].Value.Length > 0)
+                    {
+                        this.isMuted = Boolean.Parse(config2.AppSettings.Settings["Mute"].Value);
+                    }
+                }
+                else if (config1.AppSettings.Settings["Mute"].Value.Length > 0)
+                {
+                    this.isMuted = Boolean.Parse(config1.AppSettings.Settings["Mute"].Value);
                 }
             }
         }
@@ -182,33 +213,37 @@ namespace Luna
 
                     this.browser = new CefSharp.OffScreen.ChromiumWebBrowser(url, new CefSharp.BrowserSettings() { WindowlessFrameRate = this.frameRate }, new CefSharp.RequestContext(new CefSharp.RequestContextSettings()));
                     this.browser.Size = new System.Drawing.Size((int)Math.Floor(SystemParameters.VirtualScreenWidth * presentationSource.CompositionTarget.TransformToDevice.M11), (int)Math.Floor(SystemParameters.VirtualScreenHeight * presentationSource.CompositionTarget.TransformToDevice.M22));
-                    this.browser.Paint += (object sender, CefSharp.OffScreen.OnPaintEventArgs e) =>
+                    this.browser.BrowserInitialized += (object sender, EventArgs e) =>
                     {
-                        lock (this.syncObj)
+                        this.browser.GetBrowser().GetHost().SetAudioMuted(this.isMuted);
+                        this.browser.Paint += (object sender, CefSharp.OffScreen.OnPaintEventArgs e) =>
                         {
-                            if (this.isDrawing)
+                            lock (this.syncObj)
                             {
-                                using (var bitmap = new System.Drawing.Bitmap(e.Width, e.Height, 4 * e.Width, System.Drawing.Imaging.PixelFormat.Format32bppArgb, e.BufferHandle))
+                                if (this.isDrawing)
                                 {
-                                    if (this.forceRedraws > 0)
+                                    using (var bitmap = new System.Drawing.Bitmap(e.Width, e.Height, 4 * e.Width, System.Drawing.Imaging.PixelFormat.Format32bppArgb, e.BufferHandle))
                                     {
-                                        DrawDesktop(this.hWnd, bitmap, 0, 0, this.browser.Size.Width, this.browser.Size.Height, true);
-                                        this.forceRedraws--;
-                                    }
-                                    else
-                                    {
-                                        var bitmapData = bitmap.LockBits(new System.Drawing.Rectangle(e.DirtyRect.X, e.DirtyRect.Y, e.DirtyRect.Width, e.DirtyRect.Height), System.Drawing.Imaging.ImageLockMode.ReadOnly, bitmap.PixelFormat);
-
-                                        using (var b = new System.Drawing.Bitmap(bitmapData.Width, bitmapData.Height, bitmapData.Stride, bitmap.PixelFormat, bitmapData.Scan0))
+                                        if (this.forceRedraws > 0)
                                         {
-                                            DrawDesktop(this.hWnd, b, e.DirtyRect.X, e.DirtyRect.Y, e.DirtyRect.Width, e.DirtyRect.Height, false);
+                                            DrawDesktop(this.hWnd, bitmap, 0, 0, this.browser.Size.Width, this.browser.Size.Height, true);
+                                            this.forceRedraws--;
                                         }
+                                        else
+                                        {
+                                            var bitmapData = bitmap.LockBits(new System.Drawing.Rectangle(e.DirtyRect.X, e.DirtyRect.Y, e.DirtyRect.Width, e.DirtyRect.Height), System.Drawing.Imaging.ImageLockMode.ReadOnly, bitmap.PixelFormat);
 
-                                        bitmap.UnlockBits(bitmapData);
+                                            using (var b = new System.Drawing.Bitmap(bitmapData.Width, bitmapData.Height, bitmapData.Stride, bitmap.PixelFormat, bitmapData.Scan0))
+                                            {
+                                                DrawDesktop(this.hWnd, b, e.DirtyRect.X, e.DirtyRect.Y, e.DirtyRect.Width, e.DirtyRect.Height, false);
+                                            }
+
+                                            bitmap.UnlockBits(bitmapData);
+                                        }
                                     }
                                 }
                             }
-                        }
+                        }!;
                     }!;
 
                     Microsoft.Win32.SystemEvents.DisplaySettingsChanged += OnDisplaySettingsChanged!;
@@ -302,8 +337,10 @@ namespace Luna
                     {
                         this.isDrawing = false;
 
-                        NativeMethods.SystemParametersInfo(SPI_GETDESKWALLPAPER, (UInt32)path.Length, path, 0);
-                        NativeMethods.SystemParametersInfo(SPI_SETDESKWALLPAPER, 0, path.Substring(0, path.IndexOf('\0')), SPIF_UPDATEINIFILE | SPIF_SENDWININICHANGE);
+                        if (NativeMethods.SystemParametersInfo(SPI_GETDESKWALLPAPER, (UInt32)path.Length, path, 0))
+                        {
+                            NativeMethods.SystemParametersInfo(SPI_SETDESKWALLPAPER, 0, path.Substring(0, path.IndexOf('\0') + 1), SPIF_UPDATEINIFILE | SPIF_SENDWININICHANGE);
+                        }
 
                         //RestoreDesktop();
                         //this.desktopBitmap.Dispose();
@@ -315,6 +352,8 @@ namespace Luna
                     }
 
                     Microsoft.Win32.SystemEvents.DisplaySettingsChanged -= OnDisplaySettingsChanged!;
+
+                    CefSharp.Cef.Shutdown();
 
                     handled = true;
 
@@ -383,6 +422,15 @@ namespace Luna
                             config.AppSettings.Settings["Lock"].Value = this.IsLocked.ToString();
                         }
 
+                        if (config.AppSettings.Settings["Mute"] == null)
+                        {
+                            config.AppSettings.Settings.Add("Mute", this.isMuted.ToString());
+                        }
+                        else
+                        {
+                            config.AppSettings.Settings["Mute"].Value = this.isMuted.ToString();
+                        }
+
                         config.Save(System.Configuration.ConfigurationSaveMode.Modified);
                     }
                     else
@@ -417,6 +465,15 @@ namespace Luna
                                     config.AppSettings.Settings["Lock"].Value = this.IsLocked.ToString();
                                 }
 
+                                if (config.AppSettings.Settings["Mute"] == null)
+                                {
+                                    config.AppSettings.Settings.Add("Mute", this.isMuted.ToString());
+                                }
+                                else
+                                {
+                                    config.AppSettings.Settings["Mute"].Value = this.isMuted.ToString();
+                                }
+
                                 config.Save(System.Configuration.ConfigurationSaveMode.Modified);
                             }
                             else
@@ -441,6 +498,15 @@ namespace Luna
                                 else
                                 {
                                     config.AppSettings.Settings["Lock"].Value = this.IsLocked.ToString();
+                                }
+
+                                if (config.AppSettings.Settings["Mute"] == null)
+                                {
+                                    config.AppSettings.Settings.Add("Mute", this.isMuted.ToString());
+                                }
+                                else
+                                {
+                                    config.AppSettings.Settings["Mute"].Value = this.isMuted.ToString();
                                 }
 
                                 foreach (System.Configuration.ConfigurationSection section in (from section in config.Sections.Cast<System.Configuration.ConfigurationSection>() where !config.AppSettings.SectionInformation.Name.Equals(section.SectionInformation.Name) select section).ToArray())
@@ -475,6 +541,15 @@ namespace Luna
                             else
                             {
                                 config.AppSettings.Settings["Lock"].Value = this.IsLocked.ToString();
+                            }
+
+                            if (config.AppSettings.Settings["Mute"] == null)
+                            {
+                                config.AppSettings.Settings.Add("Mute", this.isMuted.ToString());
+                            }
+                            else
+                            {
+                                config.AppSettings.Settings["Mute"].Value = this.isMuted.ToString();
                             }
 
                             foreach (System.Configuration.ConfigurationSection section in (from section in config.Sections.Cast<System.Configuration.ConfigurationSection>() where !config.AppSettings.SectionInformation.Name.Equals(section.SectionInformation.Name) select section).ToArray())
@@ -524,6 +599,15 @@ namespace Luna
                     else
                     {
                         config.AppSettings.Settings["Lock"].Value = this.IsLocked.ToString();
+                    }
+
+                    if (config.AppSettings.Settings["Mute"] == null)
+                    {
+                        config.AppSettings.Settings.Add("Mute", this.isMuted.ToString());
+                    }
+                    else
+                    {
+                        config.AppSettings.Settings["Mute"].Value = this.isMuted.ToString();
                     }
 
                     config.Save(System.Configuration.ConfigurationSaveMode.Modified);

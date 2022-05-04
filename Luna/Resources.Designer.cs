@@ -88,6 +88,15 @@ namespace Luna {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Mute.
+        /// </summary>
+        internal static string Mute {
+            get {
+                return ResourceManager.GetString("Mute", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Refresh.
         /// </summary>
         internal static string Refresh {
