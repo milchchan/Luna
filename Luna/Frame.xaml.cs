@@ -22,10 +22,11 @@ namespace Luna
         private System.Drawing.Bitmap? desktopBitmap = null;
         private IntPtr hWnd = IntPtr.Zero;
         private bool isDrawing = false;
-        private int forceRedraws = 0;
         private int frameRate = 15;
         private string? source = null;
         private bool isMuted = true;
+        private double scaleX = 1.0;
+        private double scaleY = 1.0;
         public bool IsLocked { get; set; } = false;
 
         public string? Source
@@ -195,9 +196,10 @@ namespace Luna
 
                     //settings.CefCommandLineArgs.Add("disable-gpu", "1");
                     //settings.CefCommandLineArgs.Add("disable-gpu-vsync", "1");
+                    settings.CefCommandLineArgs.Add("disable-gpu-shader-disk-cache", "1");
 
-                    CefSharp.Cef.EnableHighDPISupport();
                     CefSharp.Cef.EnableWaitForBrowsersToClose();
+                    CefSharp.Cef.EnableHighDPISupport();
                     CefSharp.Cef.Initialize(settings);
 
                     if (Regex.IsMatch(this.source!, @"^\w+://", RegexOptions.CultureInvariant))
@@ -213,8 +215,11 @@ namespace Luna
                         url = String.Join("file:///", System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)!, this.source!));
                     }
 
+                    this.scaleX = presentationSource.CompositionTarget.TransformToDevice.M11;
+                    this.scaleY = presentationSource.CompositionTarget.TransformToDevice.M22;
+
                     this.browser = new CefSharp.OffScreen.ChromiumWebBrowser(url, new CefSharp.BrowserSettings() { WindowlessFrameRate = this.frameRate }, new CefSharp.RequestContext(new CefSharp.RequestContextSettings()));
-                    this.browser.Size = new System.Drawing.Size((int)Math.Floor(SystemParameters.VirtualScreenWidth * presentationSource.CompositionTarget.TransformToDevice.M11), (int)Math.Floor(SystemParameters.VirtualScreenHeight * presentationSource.CompositionTarget.TransformToDevice.M22));
+                    this.browser.Size = new System.Drawing.Size((int)Math.Floor(SystemParameters.VirtualScreenWidth * this.scaleX), (int)Math.Floor(SystemParameters.VirtualScreenHeight * this.scaleY));
                     this.browser.BrowserInitialized += (object sender, EventArgs e) =>
                     {
                         this.browser.GetBrowser().GetHost().SetAudioMuted(this.isMuted);
@@ -304,7 +309,7 @@ namespace Luna
                     const uint SPI_SETDESKWALLPAPER = 0x0014;
                     const int MAX_PATH = 260;
                     const uint SPIF_UPDATEINIFILE = 1;
-                    const uint SPIF_SENDWININICHANGE = 2;
+                    //const uint SPIF_SENDWININICHANGE = 2;
                     string path = new String('\0', MAX_PATH);
 
                     Microsoft.Win32.SystemEvents.DisplaySettingsChanged -= this.OnDisplaySettingsChanged!;
@@ -321,7 +326,7 @@ namespace Luna
 
                     if (NativeMethods.SystemParametersInfo(SPI_GETDESKWALLPAPER, (UInt32)path.Length, path, 0))
                     {
-                        NativeMethods.SystemParametersInfo(SPI_SETDESKWALLPAPER, 0, path.Substring(0, path.IndexOf('\0') + 1), SPIF_UPDATEINIFILE | SPIF_SENDWININICHANGE);
+                        NativeMethods.SystemParametersInfo(SPI_SETDESKWALLPAPER, 0, path.Substring(0, path.IndexOf('\0') + 1), SPIF_UPDATEINIFILE);
                     }
 
                     if (Frame.s_hHook != IntPtr.Zero)
@@ -600,26 +605,18 @@ namespace Luna
         {
             lock (this.syncObj)
             {
-                if (this.isDrawing && !this.browser!.GetBrowser().IsLoading)
+                if (this.isDrawing && !this.browser!.GetBrowser().IsLoading && e.Width == this.browser.Size.Width && e.Height == this.browser.Size.Height && e.DirtyRect.Width > 0 && e.DirtyRect.Height > 0)
                 {
                     using (var bitmap = new System.Drawing.Bitmap(e.Width, e.Height, 4 * e.Width, System.Drawing.Imaging.PixelFormat.Format32bppArgb, e.BufferHandle))
                     {
-                        if (this.forceRedraws > 0)
-                        {
-                            DrawDesktop(this.hWnd, bitmap, 0, 0, this.browser.Size.Width, this.browser.Size.Height, true);
-                            this.forceRedraws--;
-                        }
-                        else
-                        {
-                            var bitmapData = bitmap.LockBits(new System.Drawing.Rectangle(e.DirtyRect.X, e.DirtyRect.Y, e.DirtyRect.Width, e.DirtyRect.Height), System.Drawing.Imaging.ImageLockMode.ReadOnly, bitmap.PixelFormat);
+                        var bitmapData = bitmap.LockBits(new System.Drawing.Rectangle(e.DirtyRect.X, e.DirtyRect.Y, e.DirtyRect.Width, e.DirtyRect.Height), System.Drawing.Imaging.ImageLockMode.ReadOnly, bitmap.PixelFormat);
 
-                            using (var b = new System.Drawing.Bitmap(bitmapData.Width, bitmapData.Height, bitmapData.Stride, bitmap.PixelFormat, bitmapData.Scan0))
-                            {
-                                DrawDesktop(this.hWnd, b, e.DirtyRect.X, e.DirtyRect.Y, e.DirtyRect.Width, e.DirtyRect.Height, false);
-                            }
-
-                            bitmap.UnlockBits(bitmapData);
+                        using (var b = new System.Drawing.Bitmap(bitmapData.Width, bitmapData.Height, bitmapData.Stride, bitmap.PixelFormat, bitmapData.Scan0))
+                        {
+                            DrawDesktop(this.hWnd, b, e.DirtyRect.X, e.DirtyRect.Y, e.DirtyRect.Width, e.DirtyRect.Height);
                         }
+
+                        bitmap.UnlockBits(bitmapData);
                     }
                 }
             }
@@ -628,22 +625,32 @@ namespace Luna
         private async void OnDisplaySettingsChanged(object sender, EventArgs e)
         {
             var presentationSource = PresentationSource.FromVisual(this);
-            var width = (int)Math.Floor(SystemParameters.VirtualScreenWidth * presentationSource.CompositionTarget.TransformToDevice.M11);
-            var height = (int)Math.Floor(SystemParameters.VirtualScreenHeight * presentationSource.CompositionTarget.TransformToDevice.M22);
-            
-            if (this.browser!.Size.Width != width || this.browser.Size.Height != height)
+
+            if (this.scaleX != presentationSource.CompositionTarget.TransformToDevice.M11 || this.scaleY != presentationSource.CompositionTarget.TransformToDevice.M22)
             {
-                lock (this.syncObj)
-                {
-                    this.isDrawing = false;
-                }
+                this.scaleX = presentationSource.CompositionTarget.TransformToDevice.M11;
+                this.scaleY = presentationSource.CompositionTarget.TransformToDevice.M22;
+            }
+            else
+            {
+                var width = (int)Math.Floor(SystemParameters.VirtualScreenWidth * this.scaleX);
+                var height = (int)Math.Floor(SystemParameters.VirtualScreenHeight * this.scaleY);
 
-                await this.browser.ResizeAsync(width, height);
-                this.browser.GetBrowser().GetHost().Invalidate(CefSharp.PaintElementType.View);
-
-                lock (this.syncObj)
+                if (this.browser!.Size.Width != width || this.browser.Size.Height != height)
                 {
-                    this.isDrawing = false;
+                    lock (this.syncObj)
+                    {
+                        this.isDrawing = false;
+                    }
+
+                    await this.browser.ResizeAsync(width, height);
+
+                    lock (this.syncObj)
+                    {
+                        this.isDrawing = true;
+                    }
+
+                    this.browser.GetBrowser().GetHost().Invalidate(CefSharp.PaintElementType.View);
                 }
             }
         }
@@ -717,7 +724,7 @@ namespace Luna
             NativeMethods.ReleaseDC(workerw, hDc);
         }
 
-        private void DrawDesktop(IntPtr hWndSource, System.Drawing.Bitmap bitmap, int x, int y, int width, int height, bool force)
+        private void DrawDesktop(IntPtr hWndSource, System.Drawing.Bitmap bitmap, int x, int y, int width, int height, bool force = false)
         {
             using (System.Drawing.Graphics g = System.Drawing.Graphics.FromHwnd(hWndSource))
             {
