@@ -197,6 +197,7 @@ namespace Luna
                     //settings.CefCommandLineArgs.Add("disable-gpu", "1");
                     //settings.CefCommandLineArgs.Add("disable-gpu-vsync", "1");
                     settings.CefCommandLineArgs.Add("disable-gpu-shader-disk-cache", "1");
+                    settings.SetOffScreenRenderingBestPerformanceArgs();
 
                     CefSharp.Cef.EnableWaitForBrowsersToClose();
                     CefSharp.Cef.EnableHighDPISupport();
@@ -649,10 +650,10 @@ namespace Luna
                     {
                         this.isDrawing = true;
                     }
-
-                    this.browser.GetBrowser().GetHost().Invalidate(CefSharp.PaintElementType.View);
                 }
             }
+
+            this.browser!.GetBrowser().GetHost().Invalidate(CefSharp.PaintElementType.View);
         }
 
         public void Refresh()
