@@ -8,6 +8,7 @@
     <UseWindowsForms>True</UseWindowsForms>
     <ApplicationIcon>Luna.ico</ApplicationIcon>
     <ApplicationManifest>App.manifest</ApplicationManifest>
+    <Platforms>AnyCPU;x86;x64</Platforms>
   </PropertyGroup>
 
   <ItemGroup>
@@ -19,7 +20,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="CefSharp.OffScreen.NETCore" Version="100.0.230" />
+    <PackageReference Include="CefSharp.OffScreen.NETCore" Version="101.0.150" />
   </ItemGroup>
 
   <ItemGroup>
@@ -38,15 +39,15 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Update="chromiumembeddedframework.runtime.win-arm64" Version="100.0.23" />
+    <PackageReference Update="chromiumembeddedframework.runtime.win-arm64" Version="101.0.15" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Update="chromiumembeddedframework.runtime.win-x64" Version="100.0.23" />
+    <PackageReference Update="chromiumembeddedframework.runtime.win-x64" Version="101.0.15" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Update="chromiumembeddedframework.runtime.win-x86" Version="100.0.23" />
+    <PackageReference Update="chromiumembeddedframework.runtime.win-x86" Version="101.0.15" />
   </ItemGroup>
 
 </Project>
