@@ -112,7 +112,7 @@ namespace Luna
     internal static class NativeMethods
     {
         public delegate IntPtr LowLevelMouseProc(int nCode, IntPtr wParam, IntPtr lParam);
-
+        
         [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
         public struct POINT
         {
