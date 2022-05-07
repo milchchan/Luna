@@ -27,6 +27,7 @@ namespace Luna
         private bool isMuted = true;
         private double scaleX = 1.0;
         private double scaleY = 1.0;
+        private NativeMethods.LowLevelMouseProc? lowLevelMouseProc = null;
         public bool IsLocked { get; set; } = false;
 
         public string? Source
@@ -197,6 +198,7 @@ namespace Luna
                     //settings.CefCommandLineArgs.Add("disable-gpu", "1");
                     //settings.CefCommandLineArgs.Add("disable-gpu-vsync", "1");
                     settings.CefCommandLineArgs.Add("disable-gpu-shader-disk-cache", "1");
+                    //settings.DisableGpuAcceleration();
                     settings.SetOffScreenRenderingBestPerformanceArgs();
 
                     CefSharp.Cef.EnableWaitForBrowsersToClose();
@@ -234,7 +236,7 @@ namespace Luna
                     using (var curentProcess = System.Diagnostics.Process.GetCurrentProcess())
                     using (var mainModule = curentProcess.MainModule)
                     {
-                        Frame.s_hHook = NativeMethods.SetWindowsHookEx(WH_MOUSE_LL, (int nCode, IntPtr wParam, IntPtr lParam) =>
+                        this.lowLevelMouseProc = (int nCode, IntPtr wParam, IntPtr lParam) =>
                         {
                             if (!this.IsLocked && nCode >= 0)
                             {
@@ -282,7 +284,8 @@ namespace Luna
                             }
 
                             return NativeMethods.CallNextHookEx(Frame.s_hHook, nCode, wParam, lParam);
-                        }, NativeMethods.GetModuleHandle(mainModule!.ModuleName!), 0);
+                        };
+                        Frame.s_hHook = NativeMethods.SetWindowsHookEx(WH_MOUSE_LL, this.lowLevelMouseProc, NativeMethods.GetModuleHandle(mainModule!.ModuleName!), 0);
                     }
 
                     NativeMethods.SendMessageTimeout(NativeMethods.FindWindow("Progman", null), 0x052C, new IntPtr(0), IntPtr.Zero, 0x0, 1000, out var result);
@@ -631,6 +634,10 @@ namespace Luna
             {
                 this.scaleX = presentationSource.CompositionTarget.TransformToDevice.M11;
                 this.scaleY = presentationSource.CompositionTarget.TransformToDevice.M22;
+
+                await System.Threading.Tasks.Task.Delay(1000);
+
+                this.browser!.GetBrowser().GetHost().Invalidate(CefSharp.PaintElementType.View);
             }
             else
             {
@@ -650,10 +657,12 @@ namespace Luna
                     {
                         this.isDrawing = true;
                     }
+
+                    await System.Threading.Tasks.Task.Delay(1000);
+
+                    this.browser!.GetBrowser().GetHost().Invalidate(CefSharp.PaintElementType.View);
                 }
             }
-
-            this.browser!.GetBrowser().GetHost().Invalidate(CefSharp.PaintElementType.View);
         }
 
         public void Refresh()
