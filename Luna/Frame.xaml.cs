@@ -304,10 +304,18 @@ namespace Luna
 
         private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
         {
+            const int WM_THEMECHANGED = 0x031A;
             const int WM_DESTROY = 0x0002;
 
             switch (msg)
             {
+                case WM_THEMECHANGED:
+                    this.browser!.GetBrowser().GetHost().Invalidate(CefSharp.PaintElementType.View);
+
+                    handled = true;
+
+                    break;
+
                 case WM_DESTROY:
                     const uint SPI_GETDESKWALLPAPER = 0x73;
                     const uint SPI_SETDESKWALLPAPER = 0x0014;
