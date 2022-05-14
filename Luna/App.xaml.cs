@@ -23,6 +23,7 @@ namespace Luna
 
             var frame = new Frame() { Opacity = 0 };
             var contextMenuStrip = new System.Windows.Forms.ContextMenuStrip();
+            var sourceMenuStrip = new System.Windows.Forms.ToolStripMenuItem(Luna.Resources.Source);
             var muteMenuStrip = new System.Windows.Forms.ToolStripMenuItem(Luna.Resources.Mute, null, (sender, args) =>
             {
                 System.Windows.Forms.ToolStripMenuItem? menuItem = sender as System.Windows.Forms.ToolStripMenuItem;
@@ -44,7 +45,7 @@ namespace Luna
                 }
             }) { Checked = frame.IsLocked };
 
-            contextMenuStrip.Items.Add(Luna.Resources.Switch, null, (sender, args) =>
+            sourceMenuStrip.DropDownItems.Add(Luna.Resources.Browse, null, (sender, args) =>
             {
                 var dialog = new Microsoft.Win32.OpenFileDialog();
 
@@ -61,6 +62,23 @@ namespace Luna
                     }
                 }
             });
+            sourceMenuStrip.DropDownItems.Add(Luna.Resources.Clipboard, null, (sender, args) =>
+            {
+                System.Windows.Forms.ToolStripMenuItem? menuItem = sender as System.Windows.Forms.ToolStripMenuItem;
+                
+                if (menuItem != null)
+                {
+                    string? source = menuItem.Tag as string;
+                    Frame? frame = this.MainWindow as Frame;
+
+                    if (source != null && frame != null)
+                    {
+                        frame.Source = source;
+                    }
+                }
+            });
+            contextMenuStrip.Items.Add(sourceMenuStrip);
+            contextMenuStrip.Items.Add("-");
             contextMenuStrip.Items.Add(muteMenuStrip);
             contextMenuStrip.Items.Add(lockMenuStrip);
             contextMenuStrip.Items.Add(Luna.Resources.Refresh, null, (sender, args) =>
@@ -79,9 +97,71 @@ namespace Luna
             });
 
             this.notifyIcon = new System.Windows.Forms.NotifyIcon { Visible = true, Icon = new System.Drawing.Icon(GetResourceStream(new Uri("Luna.ico", UriKind.Relative)).Stream), Text = System.Reflection.Assembly.GetExecutingAssembly().GetName().Name, ContextMenuStrip = contextMenuStrip };
+            this.notifyIcon.Click += this.Click;
 
             frame.Show();
             frame.Hide();
+        }
+
+        private void Click(object? sender, EventArgs e)
+        {
+            const uint CF_UNICODETEXT = 13;
+            string? source;
+            System.Windows.Forms.ToolStripMenuItem? menuItem = this.notifyIcon!.ContextMenuStrip.Items[0] as System.Windows.Forms.ToolStripMenuItem;
+
+            if (NativeMethods.IsClipboardFormatAvailable(CF_UNICODETEXT) && NativeMethods.OpenClipboard(IntPtr.Zero))
+            {
+                IntPtr handle = NativeMethods.GetClipboardData(CF_UNICODETEXT);
+
+                if (handle == IntPtr.Zero)
+                {
+                    source = null;
+                }
+                else
+                {
+                    IntPtr lpwstr = NativeMethods.GlobalLock(handle);
+
+                    if (lpwstr == IntPtr.Zero)
+                    {
+                        source = null;
+                    }
+                    else
+                    {
+                        Uri? uri;
+
+                        if (Uri.TryCreate(System.Runtime.InteropServices.Marshal.PtrToStringUni(lpwstr)!.Trim(), UriKind.Absolute, out uri))
+                        {
+                            source = uri.ToString();
+                        }
+                        else
+                        {
+                            source = null;
+                        }
+                    }
+
+                    NativeMethods.GlobalUnlock(handle);
+                }
+
+                NativeMethods.CloseClipboard();
+            }
+            else
+            {
+                source = null;
+            }
+
+            if (menuItem != null)
+            {
+                if (source == null)
+                {
+                    menuItem.DropDownItems[1].Enabled = false;
+                }
+                else
+                {
+                    menuItem.DropDownItems[1].Enabled = true;
+                }
+
+                menuItem.DropDownItems[1].Tag = source;
+            }
         }
 
         protected override void OnExit(ExitEventArgs e)
@@ -90,7 +170,8 @@ namespace Luna
 
             if (!this.sessionEnding)
             {
-                this.notifyIcon!.Dispose();
+                this.notifyIcon!.Click -= this.Click;
+                this.notifyIcon.Dispose();
             }
         }
 
@@ -99,7 +180,8 @@ namespace Luna
             base.OnSessionEnding(e);
 
             this.MainWindow.Close();
-            this.notifyIcon!.Dispose();
+            this.notifyIcon!.Click -= this.Click;
+            this.notifyIcon.Dispose();
             this.sessionEnding = true;
         }
 
@@ -210,5 +292,28 @@ namespace Luna
 
         [System.Runtime.InteropServices.DllImport("kernel32.dll", CharSet = System.Runtime.InteropServices.CharSet.Unicode, SetLastError = true)]
         public static extern int GetCurrentPackageFullName(ref int packageFullNameLength, System.Text.StringBuilder packageFullName);
+
+        [System.Runtime.InteropServices.DllImport("kernel32.dll")]
+        public static extern IntPtr GlobalLock(IntPtr hMem);
+
+        [System.Runtime.InteropServices.DllImport("kernel32.dll")]
+        [return: System.Runtime.InteropServices.MarshalAs(System.Runtime.InteropServices.UnmanagedType.Bool)]
+        public static extern bool GlobalUnlock(IntPtr hMem);
+
+        [System.Runtime.InteropServices.DllImport("user32.dll")]
+        [return: System.Runtime.InteropServices.MarshalAs(System.Runtime.InteropServices.UnmanagedType.Bool)]
+        public static extern bool CloseClipboard();
+
+        [System.Runtime.InteropServices.DllImport("user32.dll")]
+        public static extern IntPtr GetClipboardData(uint uFormat);
+
+        [System.Runtime.InteropServices.DllImport("user32.dll")]
+        [return: System.Runtime.InteropServices.MarshalAs(System.Runtime.InteropServices.UnmanagedType.Bool)]
+        public static extern bool IsClipboardFormatAvailable(uint format);
+
+        [System.Runtime.InteropServices.DllImport("user32.dll")]
+        [return: System.Runtime.InteropServices.MarshalAs(System.Runtime.InteropServices.UnmanagedType.Bool)]
+        public static extern bool OpenClipboard(IntPtr hWndNewOwner);
+
     }
 }
