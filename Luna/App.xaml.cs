@@ -78,7 +78,6 @@ namespace Luna
                 }
             });
             contextMenuStrip.Items.Add(sourceMenuStrip);
-            contextMenuStrip.Items.Add("-");
             contextMenuStrip.Items.Add(muteMenuStrip);
             contextMenuStrip.Items.Add(lockMenuStrip);
             contextMenuStrip.Items.Add(Luna.Resources.Refresh, null, (sender, args) =>
