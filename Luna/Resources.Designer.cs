@@ -61,6 +61,24 @@ namespace Luna {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Browse.
+        /// </summary>
+        internal static string Browse {
+            get {
+                return ResourceManager.GetString("Browse", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Clipboard.
+        /// </summary>
+        internal static string Clipboard {
+            get {
+                return ResourceManager.GetString("Clipboard", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Exit.
         /// </summary>
         internal static string Exit {
@@ -106,11 +124,11 @@ namespace Luna {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Switch.
+        ///   Looks up a localized string similar to Source.
         /// </summary>
-        internal static string Switch {
+        internal static string Source {
             get {
-                return ResourceManager.GetString("Switch", resourceCulture);
+                return ResourceManager.GetString("Source", resourceCulture);
             }
         }
     }
