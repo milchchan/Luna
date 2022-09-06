@@ -18,6 +18,7 @@ namespace Luna
     {
         private static IntPtr s_hHook = IntPtr.Zero;
         private readonly object syncObj = new object();
+        private uint? taskbarRestart = null;
         private CefSharp.OffScreen.ChromiumWebBrowser? browser = null;
         private System.Drawing.Bitmap? desktopBitmap = null;
         private IntPtr hWnd = IntPtr.Zero;
@@ -295,7 +296,7 @@ namespace Luna
                         //SaveDesktop();
 
                         this.isDrawing = true;
-                    }                    
+                    }
                 }
 
                 hwndSource.AddHook(new System.Windows.Interop.HwndSourceHook(this.WndProc));
@@ -311,6 +312,8 @@ namespace Luna
             switch (msg)
             {
                 case WM_CREATE:
+                    this.taskbarRestart = NativeMethods.RegisterWindowMessage("TaskbarCreated");
+
                     break;
                     
                 case WM_THEMECHANGED:
@@ -357,6 +360,36 @@ namespace Luna
 
                     handled = true;
 
+                    break;
+
+                default:
+                    if (this.taskbarRestart.HasValue && this.taskbarRestart.Value == msg)
+                    {
+                        App? app = Application.Current as App;
+
+                        if (app != null && app.NotifyIcon != null)
+                        {
+                            app.NotifyIcon.Visible = false;
+                            app.NotifyIcon.Visible = true;
+
+                            lock (this.syncObj)
+                            {
+                                this.isDrawing = false;
+                            }
+
+                            NativeMethods.SendMessageTimeout(NativeMethods.FindWindow("Progman", null), 0x052C, new IntPtr(0), IntPtr.Zero, 0x0, 1000, out var result);
+
+                            lock (this.syncObj)
+                            {
+                                this.isDrawing = true;
+                            }
+
+                            //await System.Threading.Tasks.Task.Delay(1000);
+
+                            this.browser!.GetBrowser().GetHost().Invalidate(CefSharp.PaintElementType.View);
+                        }
+                    }
+                    
                     break;
             }
 
