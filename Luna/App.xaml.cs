@@ -313,6 +313,8 @@ namespace Luna
         [System.Runtime.InteropServices.DllImport("user32.dll")]
         [return: System.Runtime.InteropServices.MarshalAs(System.Runtime.InteropServices.UnmanagedType.Bool)]
         public static extern bool OpenClipboard(IntPtr hWndNewOwner);
-
+        
+        [DllImport("user32.dll", SetLastError=true, CharSet=CharSet.Auto)]
+        public static extern uint RegisterWindowMessage(string lpString);
     }
 }
