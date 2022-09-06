@@ -182,6 +182,7 @@ namespace Luna
                 const int WH_MOUSE_LL = 14;
 
                 this.hWnd = hwndSource.Handle;
+                this.taskbarRestart = NativeMethods.RegisterWindowMessage("TaskbarCreated");
 
                 if (this == Application.Current.MainWindow)
                 {
@@ -305,19 +306,16 @@ namespace Luna
 
         private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
         {
-            const int WM_CREATE = 0x0001;
             const int WM_THEMECHANGED = 0x031A;
             const int WM_DESTROY = 0x0002;
 
             switch (msg)
             {
-                case WM_CREATE:
-                    this.taskbarRestart = NativeMethods.RegisterWindowMessage("TaskbarCreated");
-
-                    break;
-                    
                 case WM_THEMECHANGED:
-                    this.browser!.GetBrowser().GetHost().Invalidate(CefSharp.PaintElementType.View);
+                    System.Threading.Tasks.Task.Delay(1000).ContinueWith((task) =>
+                    {
+                        this.browser!.GetBrowser().GetHost().Invalidate(CefSharp.PaintElementType.View);
+                    }, System.Threading.Tasks.TaskScheduler.FromCurrentSynchronizationContext());
 
                     handled = true;
 
@@ -384,9 +382,10 @@ namespace Luna
                                 this.isDrawing = true;
                             }
 
-                            //await System.Threading.Tasks.Task.Delay(1000);
-
-                            this.browser!.GetBrowser().GetHost().Invalidate(CefSharp.PaintElementType.View);
+                            System.Threading.Tasks.Task.Delay(1000).ContinueWith((task) =>
+                            {
+                                this.browser!.GetBrowser().GetHost().Invalidate(CefSharp.PaintElementType.View);
+                            }, System.Threading.Tasks.TaskScheduler.FromCurrentSynchronizationContext());
                         }
                     }
                     
@@ -798,26 +797,29 @@ namespace Luna
                     return true;
                 }, IntPtr.Zero);
 
-                var hCompatibleDc = NativeMethods.CreateCompatibleDC(hDc);
-                var hWorkerwDc = NativeMethods.GetDCEx(workerw, IntPtr.Zero, 0x403);
-                var hBitmap = bitmap.GetHbitmap();
-                var hGdiObj = NativeMethods.SelectObject(hCompatibleDc, hBitmap);
-
-                if (force)
+                if (workerw != IntPtr.Zero)
                 {
-                    NativeMethods.BitBlt(hWorkerwDc, 0, 0, bitmap.Width, bitmap.Height, hCompatibleDc, 0, 0, NativeMethods.SRCCOPY);
-                }
-                else
-                {
-                    NativeMethods.BitBlt(hWorkerwDc, x, y, width, height, hCompatibleDc, 0, 0, NativeMethods.SRCCOPY);
-                }
+                    var hCompatibleDc = NativeMethods.CreateCompatibleDC(hDc);
+                    var hWorkerwDc = NativeMethods.GetDCEx(workerw, IntPtr.Zero, 0x403);
+                    var hBitmap = bitmap.GetHbitmap();
+                    var hGdiObj = NativeMethods.SelectObject(hCompatibleDc, hBitmap);
 
-                NativeMethods.SelectObject(hCompatibleDc, hGdiObj);
+                    if (force)
+                    {
+                        NativeMethods.BitBlt(hWorkerwDc, 0, 0, bitmap.Width, bitmap.Height, hCompatibleDc, 0, 0, NativeMethods.SRCCOPY);
+                    }
+                    else
+                    {
+                        NativeMethods.BitBlt(hWorkerwDc, x, y, width, height, hCompatibleDc, 0, 0, NativeMethods.SRCCOPY);
+                    }
 
-                NativeMethods.DeleteObject(hBitmap);
-                NativeMethods.DeleteDC(hCompatibleDc);
-                g.ReleaseHdc(hDc);
-                NativeMethods.ReleaseDC(workerw, hWorkerwDc);
+                    NativeMethods.SelectObject(hCompatibleDc, hGdiObj);
+
+                    NativeMethods.DeleteObject(hBitmap);
+                    NativeMethods.DeleteDC(hCompatibleDc);
+                    g.ReleaseHdc(hDc);
+                    NativeMethods.ReleaseDC(workerw, hWorkerwDc);
+                }
             }
         }
     }
