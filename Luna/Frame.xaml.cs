@@ -304,11 +304,15 @@ namespace Luna
 
         private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
         {
+            const int WM_CREATE = 0x0001;
             const int WM_THEMECHANGED = 0x031A;
             const int WM_DESTROY = 0x0002;
 
             switch (msg)
             {
+                case WM_CREATE:
+                    break;
+                    
                 case WM_THEMECHANGED:
                     this.browser!.GetBrowser().GetHost().Invalidate(CefSharp.PaintElementType.View);
 
