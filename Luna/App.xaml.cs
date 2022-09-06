@@ -17,6 +17,14 @@ namespace Luna
         private bool sessionEnding = false;
         private System.Windows.Forms.NotifyIcon? notifyIcon = null;
 
+        public System.Windows.Forms.NotifyIcon? NotifyIcon
+        {
+            get
+            {
+                return this.notifyIcon;
+            }
+        }
+
         protected override void OnStartup(StartupEventArgs e)
         {
             base.OnStartup(e);
