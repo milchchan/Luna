@@ -204,7 +204,6 @@ namespace Luna
                     settings.SetOffScreenRenderingBestPerformanceArgs();
 
                     CefSharp.Cef.EnableWaitForBrowsersToClose();
-                    CefSharp.Cef.EnableHighDPISupport();
                     CefSharp.Cef.Initialize(settings);
 
                     if (Regex.IsMatch(this.source!, @"^\w+://", RegexOptions.CultureInvariant))

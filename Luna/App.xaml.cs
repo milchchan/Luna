@@ -114,7 +114,7 @@ namespace Luna
         {
             const uint CF_UNICODETEXT = 13;
             string? source;
-            System.Windows.Forms.ToolStripMenuItem? menuItem = this.notifyIcon!.ContextMenuStrip.Items[0] as System.Windows.Forms.ToolStripMenuItem;
+            System.Windows.Forms.ToolStripMenuItem? menuItem = this.notifyIcon!.ContextMenuStrip!.Items[0] as System.Windows.Forms.ToolStripMenuItem;
 
             if (NativeMethods.IsClipboardFormatAvailable(CF_UNICODETEXT) && NativeMethods.OpenClipboard(IntPtr.Zero))
             {
