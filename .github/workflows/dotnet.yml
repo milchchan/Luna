@@ -26,7 +26,7 @@ jobs:
     - name: Publish
       run: dotnet publish Luna/Luna.csproj --configuration Release --framework net8.0-windows7.0 --output Luna/bin/Release/net8.0-windows/win10-x64/publish/ --runtime win10-x64 --self-contained true
     - name: Upload a Build Artifact
-      uses: actions/upload-artifact@v2.3.0
+      uses: actions/upload-artifact@v3
       with:
         name: Luna-win-x64
         path: Luna/bin/Release/net8.0-windows/win10-x64/publish/
