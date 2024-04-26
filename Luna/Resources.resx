@@ -135,6 +135,9 @@
   <data name="Mute" xml:space="preserve">
     <value>Mute</value>
   </data>
+  <data name="Pause" xml:space="preserve">
+    <value>Pause</value>
+  </data>
   <data name="Refresh" xml:space="preserve">
     <value>Refresh</value>
   </data>
