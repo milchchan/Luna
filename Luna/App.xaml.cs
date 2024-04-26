@@ -32,6 +32,17 @@ namespace Luna
             var frame = new Frame() { Opacity = 0 };
             var contextMenuStrip = new System.Windows.Forms.ContextMenuStrip();
             var sourceMenuStrip = new System.Windows.Forms.ToolStripMenuItem(Luna.Resources.Source);
+            var pauseMenuStrip = new System.Windows.Forms.ToolStripMenuItem(Luna.Resources.Pause, null, (sender, args) =>
+            {
+                System.Windows.Forms.ToolStripMenuItem? menuItem = sender as System.Windows.Forms.ToolStripMenuItem;
+                Frame? frame = this.MainWindow as Frame;
+
+                if (menuItem != null && frame != null)
+                {
+                    frame.IsPaused = menuItem.Checked = !menuItem.Checked;
+                }
+            })
+            { Checked = frame.IsPaused };
             var muteMenuStrip = new System.Windows.Forms.ToolStripMenuItem(Luna.Resources.Mute, null, (sender, args) =>
             {
                 System.Windows.Forms.ToolStripMenuItem? menuItem = sender as System.Windows.Forms.ToolStripMenuItem;
@@ -86,8 +97,6 @@ namespace Luna
                 }
             });
             contextMenuStrip.Items.Add(sourceMenuStrip);
-            contextMenuStrip.Items.Add(muteMenuStrip);
-            contextMenuStrip.Items.Add(lockMenuStrip);
             contextMenuStrip.Items.Add(Luna.Resources.Refresh, null, (sender, args) =>
             {
                 Frame? frame = this.MainWindow as Frame;
@@ -97,6 +106,10 @@ namespace Luna
                     frame.Refresh();
                 }
             });
+            contextMenuStrip.Items.Add("-");
+            contextMenuStrip.Items.Add(pauseMenuStrip);
+            contextMenuStrip.Items.Add(muteMenuStrip);
+            contextMenuStrip.Items.Add(lockMenuStrip);
             contextMenuStrip.Items.Add("-");
             contextMenuStrip.Items.Add(Luna.Resources.Exit, null, (sender, args) =>
             {
