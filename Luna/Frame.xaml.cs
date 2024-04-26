@@ -30,6 +30,7 @@ namespace Luna
         private double scaleY = 1.0;
         private NativeMethods.LowLevelMouseProc? lowLevelMouseProc = null;
         public bool IsLocked { get; set; } = false;
+        public bool IsPaused { get; set; } = false;
 
         public string? Source
         {
@@ -652,7 +653,7 @@ namespace Luna
         {
             lock (this.syncObj)
             {
-                if (this.isDrawing && !this.browser!.GetBrowser().IsLoading && e.Width == this.browser.Size.Width && e.Height == this.browser.Size.Height && e.DirtyRect.Width > 0 && e.DirtyRect.Height > 0)
+                if (this.isDrawing && !this.IsPaused && !this.browser!.GetBrowser().IsLoading && e.Width == this.browser.Size.Width && e.Height == this.browser.Size.Height && e.DirtyRect.Width > 0 && e.DirtyRect.Height > 0)
                 {
                     using (var bitmap = new System.Drawing.Bitmap(e.Width, e.Height, 4 * e.Width, System.Drawing.Imaging.PixelFormat.Format32bppArgb, e.BufferHandle))
                     {
